@@ -23,6 +23,7 @@
   },
   "homepage": "https://github.com/intuitivcloud/signalman#readme",
   "devDependencies": {
+    "express": "^4.12.4",
     "gulp": "^3.9.0",
     "gulp-eslint": "^0.13.2",
     "gulp-filesize": "0.0.6",
