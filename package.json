@@ -1,0 +1,38 @@
+{
+  "name": "signalman",
+  "version": "1.0.0",
+  "description": "An isomorphic router to build web applications",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/intuitivcloud/signalman.git"
+  },
+  "keywords": [
+    "isomorphic",
+    "router",
+    "routing",
+    "route"
+  ],
+  "author": "intuitivcloud Engineering <engineering@intuitivcloud.com>",
+  "license": "BSD-3-Clause",
+  "bugs": {
+    "url": "https://github.com/intuitivcloud/signalman/issues"
+  },
+  "homepage": "https://github.com/intuitivcloud/signalman#readme",
+  "devDependencies": {
+    "gulp": "^3.9.0",
+    "gulp-eslint": "^0.13.2",
+    "gulp-filesize": "0.0.6",
+    "gulp-load-plugins": "^0.10.0",
+    "gulp-mocha": "^2.1.1",
+    "gulp-util": "^3.0.5",
+    "node-libs-browser": "^0.5.2",
+    "webpack": "^1.9.10"
+  },
+  "dependencies": {
+    "path-to-regexp": "^1.2.0"
+  }
+}
