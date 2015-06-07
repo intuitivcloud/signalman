@@ -1,0 +1,27 @@
+{
+  "env": {
+    "node": true,
+    "browser": true
+  },
+  "globals": {
+    "require": false,
+    "module": false
+  },
+  "rules": {
+    "eqeqeq": 2,
+    "quotes": [2, "single"],
+    "strict": 2,
+    "vars-on-top": 1,
+    "no-use-before-define": 2,
+    "comma-dangle": [2, "never"],
+    "no-cond-assign": [2, "except-parens"],
+    "no-debugger": 2,
+    "no-unused-vars": [2, {"args":"none"}],
+    "curly": [2, "multi"],
+    "brace-style": [2, "stroustrup", { "allowSingleLine": true }],
+    "no-underscore-dangle": 0,
+    "no-multi-spaces": 0,
+    "key-spacing": 0,
+    "no-shadow": 0
+  }
+}
