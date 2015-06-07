@@ -33,6 +33,7 @@
     "webpack": "^1.9.10"
   },
   "dependencies": {
+    "microevent": "^1.0.0",
     "path-to-regexp": "^1.2.0"
   }
 }
