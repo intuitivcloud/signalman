@@ -22,7 +22,7 @@ router.get('/', causePrinter, function (cxt) {
   cxt.res.status(200).send('Hello World\n');
 });
 
-router.get('/hello/:name', causePrinter, function (cxt) {
+router.get('/hello/{name}', causePrinter, function (cxt) {
   var req = cxt.req,
       params = req.params;
 
