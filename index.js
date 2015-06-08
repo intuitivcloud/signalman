@@ -9,6 +9,7 @@
 // module dependencies
 var microevent = require('microevent'),
     murl = require('murl'),
+    qs = require('query-string'),
     u = require('./utils');
 
 var httpSafeMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS', 'TRACE'];
@@ -88,6 +89,7 @@ Router.prototype.dispatch = function (req, res, next) {
   if (!route) return next();
 
   req.params = route.matcher(path);
+  req.query = parsedUrl.search ? qs.parse(parsedUrl.search) : {};
   handlerQ = route.handlers.slice();            // shallow copy of handlers
 
   cxt = {
