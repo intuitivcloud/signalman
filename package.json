@@ -35,6 +35,7 @@
   },
   "dependencies": {
     "microevent": "^1.0.0",
-    "murl": "^0.4.1"
+    "murl": "^0.4.1",
+    "query-string": "^2.3.0"
   }
 }
