@@ -7,39 +7,11 @@
 'use strict';
 
 // module dependencies
-var path2rex = require('path-to-regexp'),
-    microevent = require('microevent');
+var microevent = require('microevent'),
+    murl = require('murl'),
+    u = require('./utils');
 
 var httpSafeMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS', 'TRACE'];
-
-/**
- * Finds the first item in the array for which the specified
- * predicate function returns <code>true</code>
- *
- * @param  {Function} predicate - the predicate to use to test each value
- *
- * @return {*|undefined} the first item in the array which tests positive
- *                        with the predicate
- */
-function find(items, predicate) {
-  var i = 0;
-
-  for (;i < items.length; i += 1)
-    if (predicate(items[i], i, items))
-      return items[i];
-}
-
-/**
- * Returns an array based on the specified arguments object
- *
- * @param  {Object} args - the arguments object to convert to array
- *
- * @return {Array} an array containing the items passed in the specified
- *                  arguments object
- */
-function arrgs(args) {
-  return Array.prototype.slice.call(args);
-}
 
 /**
  * A router that routes requests
@@ -65,15 +37,13 @@ httpSafeMethods.reduce(function (proto, method) {
    * @param  {function[]} handlers - one or more handlers
    */
   proto[methodName] = function (path) {
-    var handlers = arrgs(arguments).slice(1),
-        keys = [],
-        m = path2rex(path, keys);
+    var handlers = u.arrgs(arguments).slice(1),
+        m = murl(path);
 
     if (!(m in this._routes)) this._routes[m] = {};
 
     this._routes.push({
       method: method,
-      keys: keys,
       path: path,
       handlers: handlers,
       matcher: m
@@ -86,31 +56,22 @@ httpSafeMethods.reduce(function (proto, method) {
 /**
  * Finds and returns the first route whose matcher matches the specified
  *
- * @param  {[type]}
- * @param  {[type]}
- * @return {[type]}
+ * @param  {string} method - the HTTP method to match route against
+ * @param  {string} path - the path to match the route against
+ *
+ * @return {Object} the route object or undefined
  */
 Router.prototype._findRoute = function findRoute(method, path) {
-  return find(this._routes, function (r) {
-    return r.matcher.test(path) && r.method === method;
+  return u.find(this._routes, function (r) {
+    return r.matcher(path) && r.method === method;
   });
 };
 
 Router.prototype.dispatch = function (req, res, next) {
-  var path = req.url,
+  var parsedUrl = u.parseUrl(req.url),
+      path = parsedUrl.pathname,
       cause = 'httpRequest',
       route, cxt, handlerQ;
-
-  function extractParams(route, path) {
-    var m = route.matcher.exec(path);
-
-    if (!m) return {};
-
-    return route.keys.reduce(function (params, k, i) {
-      params[k.name] = decodeURIComponent(m[i + 1]);
-      return params;
-    }, {});
-  }
 
   function nextHandler() {
     var handler = handlerQ.shift();
@@ -126,7 +87,7 @@ Router.prototype.dispatch = function (req, res, next) {
   // did not find a matching route
   if (!route) return next();
 
-  req.params = extractParams(route, path);
+  req.params = route.matcher(path);
   handlerQ = route.handlers.slice();            // shallow copy of handlers
 
   cxt = {
@@ -143,7 +104,6 @@ Router.prototype.dispatch = function (req, res, next) {
   this.trigger('navigating', {path: path, cause: cause, router: this});
 
   return nextHandler();
-
 };
 
 Router.prototype.start = function () {
