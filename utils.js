@@ -52,8 +52,6 @@ exports.parseUrl = function parseUrl (urlToParse) {
 
   if (!m) return {};
 
-  //origin = $1\nprotocol = $2\nuserinfo = $3\nusername = $4\npassword = $5\nhost = $6\nhostname = $7\nport = $8\npath = $9\nsearch = $10\nhash = $11
-
   return {
     origin: m[i++],
     protocol: m[i++],
