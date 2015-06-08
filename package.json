@@ -35,6 +35,6 @@
   },
   "dependencies": {
     "microevent": "^1.0.0",
-    "path-to-regexp": "^1.2.0"
+    "murl": "^0.4.1"
   }
 }
