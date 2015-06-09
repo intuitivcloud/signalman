@@ -23,6 +23,7 @@
   },
   "homepage": "https://github.com/intuitivcloud/signalman#readme",
   "devDependencies": {
+    "expect.js": "^0.3.1",
     "express": "^4.12.4",
     "gulp": "^3.9.0",
     "gulp-eslint": "^0.13.2",
@@ -31,6 +32,7 @@
     "gulp-mocha": "^2.1.1",
     "gulp-util": "^3.0.5",
     "node-libs-browser": "^0.5.2",
+    "proxyquire": "^1.5.0",
     "webpack": "^1.9.10"
   },
   "dependencies": {
