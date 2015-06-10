@@ -8,6 +8,7 @@
 
 // module dependencies
 var microevent = require('microevent'),
+    purl = require('purl'),
     murl = require('murl'),
     qs = require('query-string'),
     u = require('./utils');
@@ -69,7 +70,7 @@ Router.prototype._findRoute = function findRoute(method, path) {
 };
 
 Router.prototype.dispatch = function (req, res, next) {
-  var parsedUrl = u.parseUrl(req.url),
+  var parsedUrl = purl(req.url),
       path = parsedUrl.pathname,
       cause = 'httpRequest',
       route, cxt, handlerQ;
@@ -117,3 +118,4 @@ function signalman() {
 }
 
 module.exports = signalman;
+

@@ -6,8 +6,6 @@
 
 'use strict';
 
-var pathRex = /(([\w\.\-\+]+:)\/{2}(([\w\d\.]+):([\w\d\.]+))?@?(([a-zA-Z0-9\.\-_]+)(?::(\d{1,5}))?))?(\/(?:[a-zA-Z0-9\.\-\/\+\%]+)?)(?:\?([a-zA-Z0-9=%\-_\.\*&;]+))?(?:#([a-zA-Z0-9\-=,&%;\/\\"'\?]+)?)?/;
-
 /**
  * Finds the first item in the array for which the specified
  * predicate function returns <code>true</code>
@@ -37,32 +35,3 @@ exports.arrgs = function arrgs(args) {
   return Array.prototype.slice.call(args);
 }
 
-/**
- * Parses the specified URL and returns an object containing the components
- * extracted
- *
- * @param  {string} urlToParse - the URL to parse and extract components from
- *
- * @return {Object} an object containing the components extracted from the specified
- *                  URL
- */
-exports.parseUrl = function parseUrl (urlToParse) {
-  var m = pathRex.exec(urlToParse),
-      i = 1;
-
-  if (!m) return {};
-
-  return {
-    origin: m[i++],
-    protocol: m[i++],
-    userinfo: m[i++],
-    username: m[i++],
-    password: m[i++],
-    host: m[i++],
-    hostname: m[i++],
-    port: m[i++],
-    pathname: m[i++],
-    search: m[i++],
-    hash: m[i++]
-  };
-};

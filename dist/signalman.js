@@ -59,9 +59,10 @@
 
 	// module dependencies
 	var microevent = __webpack_require__(1),
+	    purl = __webpack_require__(3),
 	    murl = __webpack_require__(2),
-	    qs = __webpack_require__(3),
-	    u = __webpack_require__(5);
+	    qs = __webpack_require__(4),
+	    u = __webpack_require__(6);
 
 	var httpSafeMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS', 'TRACE'];
 
@@ -120,7 +121,7 @@
 	};
 
 	Router.prototype.dispatch = function (req, res, next) {
-	  var parsedUrl = u.parseUrl(req.url),
+	  var parsedUrl = purl(req.url),
 	      path = parsedUrl.pathname,
 	      cause = 'httpRequest',
 	      route, cxt, handlerQ;
@@ -168,6 +169,7 @@
 	}
 
 	module.exports = signalman;
+
 
 
 /***/ },
@@ -225,7 +227,7 @@
 		module.exports	= MicroEvent
 	}
 
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(4)(module)))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)(module)))
 
 /***/ },
 /* 2 */
@@ -321,6 +323,55 @@
 /* 3 */
 /***/ function(module, exports, __webpack_require__) {
 
+	/* WEBPACK VAR INJECTION */(function(global) {/*!
+	 * purl
+	 * Copyright (c) 2015 intuitivcloud Systems <engineering@intuitivcloud.com>
+	 * BSD-3-Clause Licensed
+	 */
+
+	'use strict';
+
+	var pathRex = /(([\w\.\-\+]+:)\/{2}(([\w\d\.]+):([\w\d\.]+))?@?(([a-zA-Z0-9\.\-_]+)(?::(\d{1,5}))?))?(\/(?:[a-zA-Z0-9\.\-\/\+\%]+)?)(?:\?([a-zA-Z0-9=%\-_\.\*&;]+))?(?:#([a-zA-Z0-9\-=,&%;\/\\"'\?]+)?)?/;
+
+	/**
+	 * Parses the specified URL and returns an object containing the components
+	 * extracted
+	 *
+	 * @param  {string} urlToParse - the URL to parse and extract components from
+	 *
+	 * @return {Object} an object containing the components extracted from the specified
+	 *                  URL
+	 */
+	function purl(urlToParse) {
+	  var m = pathRex.exec(urlToParse),
+	      i = 1;
+
+	  if (!m) return {};
+
+	  return {
+	    origin: m[i++],
+	    protocol: m[i++],
+	    userinfo: m[i++],
+	    username: m[i++],
+	    password: m[i++],
+	    host: m[i++],
+	    hostname: m[i++],
+	    port: m[i++],
+	    pathname: m[i++],
+	    search: m[i++],
+	    hash: m[i++]
+	  };
+	}
+
+	module.exports = ((global || window).purl = purl);
+
+
+	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
+
+/***/ },
+/* 4 */
+/***/ function(module, exports, __webpack_require__) {
+
 	'use strict';
 
 	exports.extract = function (maybeUrl) {
@@ -376,7 +427,7 @@
 
 
 /***/ },
-/* 4 */
+/* 5 */
 /***/ function(module, exports, __webpack_require__) {
 
 	module.exports = function(module) {
@@ -392,7 +443,7 @@
 
 
 /***/ },
-/* 5 */
+/* 6 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/*!
@@ -402,8 +453,6 @@
 	 */
 
 	'use strict';
-
-	var pathRex = /(([\w\.\-\+]+:)\/{2}(([\w\d\.]+):([\w\d\.]+))?@?(([a-zA-Z0-9\.\-_]+)(?::(\d{1,5}))?))?(\/(?:[a-zA-Z0-9\.\-\/\+\%]+)?)(?:\?([a-zA-Z0-9=%\-_\.\*&;]+))?(?:#([a-zA-Z0-9\-=,&%;\/\\"'\?]+)?)?/;
 
 	/**
 	 * Finds the first item in the array for which the specified
@@ -434,35 +483,6 @@
 	  return Array.prototype.slice.call(args);
 	}
 
-	/**
-	 * Parses the specified URL and returns an object containing the components
-	 * extracted
-	 *
-	 * @param  {string} urlToParse - the URL to parse and extract components from
-	 *
-	 * @return {Object} an object containing the components extracted from the specified
-	 *                  URL
-	 */
-	exports.parseUrl = function parseUrl (urlToParse) {
-	  var m = pathRex.exec(urlToParse),
-	      i = 1;
-
-	  if (!m) return {};
-
-	  return {
-	    origin: m[i++],
-	    protocol: m[i++],
-	    userinfo: m[i++],
-	    username: m[i++],
-	    password: m[i++],
-	    host: m[i++],
-	    hostname: m[i++],
-	    port: m[i++],
-	    pathname: m[i++],
-	    search: m[i++],
-	    hash: m[i++]
-	  };
-	};
 
 
 /***/ }
