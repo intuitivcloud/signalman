@@ -12,37 +12,46 @@
 var path = require('path'),
     webpack = require('webpack');
 
-var isProduction = (process.env.NODE_ENV || 'development') === 'production',
-    copyrightBanner = 'signalman\nCopyright (c) 2015 intuitivcloud Systems <engineering@intuitivcloud.com>\nBSD-3-Clause Licensed',
+var copyrightBanner = 'signalman\nCopyright (c) 2015 intuitivcloud Systems <engineering@intuitivcloud.com>\nBSD-3-Clause Licensed',
     pluginsToUse = [
       new webpack.optimize.OccurenceOrderPlugin(true),
       new webpack.optimize.DedupePlugin()
     ];
 
-// uglify only if in production
-if (isProduction)
-  pluginsToUse.push(new webpack.optimize.UglifyJsPlugin({
-    compress: {
-      dead_code: true,
-      unused: true,
-      warnings: true,
-      join_vars: true
-    },
+module.exports = [
+  {
+    name: 'signalman client - dev',
+    entry: './index.js',
     output: {
-      comments: false
+      path: path.join(__dirname, 'dist'),
+      filename: 'signalman.js'
     },
-    mangle: true
-  }));
-
-pluginsToUse.push(new webpack.BannerPlugin(copyrightBanner, { entryOnly: true }));
-
-module.exports = {
-  entry: './index.js',
-  output: {
-    path: path.join(__dirname, 'dist'),
-    filename: 'signalman.js'
+    target: 'web',
+    cache: false,
+    devtool: 'hidden-source-map',
+    plugins: pluginsToUse.concat(new webpack.BannerPlugin(copyrightBanner, { entryOnly: true }))
   },
-  target: 'web',
-  cache: false,
-  plugins: pluginsToUse
-};
+  {
+    name: 'signalman client - prod',
+    entry: './index.js',
+    output: {
+      path: path.join(__dirname, 'dist'),
+      filename: 'signalman.min.js'
+    },
+    target: 'web',
+    cache: false,
+    devtool: 'hidden-source-map',
+    plugins: pluginsToUse.concat(new webpack.optimize.UglifyJsPlugin({
+      compress: {
+        dead_code: true,
+        unused: true,
+        warnings: true,
+        join_vars: true
+      },
+      output: {
+        comments: false
+      },
+      mangle: true
+    }), new webpack.BannerPlugin(copyrightBanner, { entryOnly: true }))
+  }
+];
