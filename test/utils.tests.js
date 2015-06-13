@@ -54,4 +54,49 @@ describe('utils', function () {
 
   });
 
+  describe('#merge', function () {
+
+    it('should merge attributes from specified source objects', function () {
+      expect(u.merge({name: 'jdoe', age: 31})).to.be.eql({name: 'jdoe', age: 31});
+    });
+
+    it('should merge attributes from specified multiple source objects', function () {
+      expect(u.merge({name: 'jdoe'}, {age: 31})).to.be.eql({name: 'jdoe', age: 31});
+    });
+
+    it('should return empty object if no source objects were specified', function () {
+      expect(u.merge()).to.be.eql({});
+    });
+
+    it('should overwrite attributes from successive objects with same name', function () {
+      expect(u.merge({name: 'jdoe'}, {name: 'asmith'})).to.be.eql({name: 'asmith'});
+    });
+
+    it('should return shallow copies of source objects', function () {
+      var src = {name: 'jdoe', age: 31},
+          dest = u.merge(src);
+
+      dest.name = 'asmith';
+      dest.age = 43;
+
+      expect(src).to.be.eql({name: 'jdoe', age: 31});
+    });
+  });
+
+  describe('#pick', function () {
+
+    it('should extract specified attributes from source object', function () {
+      expect(u.pick({name: 'jdoe', age: 51}, ['name'])).to.be.eql({name: 'jdoe'});
+    });
+
+    it('should return an empty object if no specified attributes found in source object', function () {
+      expect(u.pick({foo: 'bar', key: 'value'}, ['name'])).to.be.eql({});
+    });
+
+    it('should return some attributes if some others are not found in source object', function () {
+      expect(u.pick({name: 'jdoe', key: 'value'}, ['name', 'age'])).to.be.eql({name: 'jdoe'});
+    });
+
+  });
+
 });
