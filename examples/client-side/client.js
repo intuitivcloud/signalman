@@ -10,7 +10,7 @@
     var c = document.getElementById('content'),
         nameField, sayHelloButton;
 
-    c.innerHTML = '<input type="text" id="name"/><button type="button" id="sayHello">Say Hello!</button>';
+    c.innerHTML = '<a href="/hello/Signalman">Say Hello Signalman!</a><br/><input type="text" id="name"/><button type="button" id="sayHello">Say Hello!</button>';
 
     nameField = document.getElementById('name');
     sayHelloButton = document.getElementById('sayHello');
