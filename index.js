@@ -82,9 +82,9 @@ microevent.mixin(Router);
  * @property {string}     method - the HTTP method of this route
  * @property {string}     path - the path pattern used by this route to match requests
  * @property {Handler[]}  handlers - the handlers or middlewares for this route
- * @property {Object}     matcher - the matcher object that performs matching of request 
+ * @property {Object}     matcher - the matcher object that performs matching of request
  *                                  with this route's path pattern
- */ 
+ */
 
 // add HTTP methods as methods to the router prototype
 httpSafeMethods.reduce(function (proto, method) {
@@ -266,13 +266,61 @@ Router.prototype._onPopState = function (e) {
 };
 
 /**
+ * Handles clicks on the document, and defines
+ * navigation behavior for links.
+ *
+ * @private
+ *
+ * @param {Object} e - the click event
+ */
+Router.prototype._linkJacker = function (e) {
+  var tgt, href, docUrl, fullPath;
+
+  // ignore cancelled, modified or button events
+  if (e.defaultPrevented) return;
+  if (e.metaKey || e.ctrlKey || e.shiftKey) return;
+  if (e.button !== 0) return;
+
+  tgt = e.target;
+  while (tgt && tgt.nodeName !== 'A')
+    tgt = tgt.parentNode;
+
+  if (!tgt) return;
+
+  // ignore links which open in a new tab, we will need server-side render for them
+  if (tgt.target && tgt.target !== '_self') return;
+
+  // ignore links that offer downloading content
+  if (tgt.attributes.download) return;
+
+  // extract the path of the link and the current document
+  href = purl(tgt.href);
+  docUrl = purl(window.location.href);
+
+  // link's protocol and host should match that of the host
+  if (href.protocol !== docUrl.protocol || href.host !== docUrl.host) return;
+
+  // compose the new path
+  fullPath = href.pathname + (href.search || '') + (href.hash || '');
+
+  e.preventDefault();
+
+  // get our router to route us
+  this.navigateTo(fullPath, {cause: 'navigation'});
+};
+
+/**
  * The options for routing behavior
  *
  * @typedef RoutingOptions
  *
  * @property {Boolean} [autoStart=false] - <code>true</code> if the router should initialize
  *                                         current document's URL and call the routes registered
- *                                         for it. This is only required on client-side.
+ *                                         for it. This is only available on the client-side.
+ *
+ * @property {Boolean} [handleLinks=true] - <code>true</code> if the router should intercept all
+ *                                         links on the current document and handle it. This is
+ *                                         only available on the client-side
  */
 
 /**
@@ -283,7 +331,7 @@ Router.prototype._onPopState = function (e) {
  * @param {RoutingOptions} [opts] - options for routing
  */
 Router.prototype.start = function (opts) {
-  opts = opts || { autoStart: false };
+  opts = u.merge({ autoStart: false, handleLinks: true }, (opts || {}));
 
   // already running, noop
   if (this._isStarted) return undefined;
@@ -300,6 +348,12 @@ Router.prototype.start = function (opts) {
   if (opts.autoStart)
     this.navigateTo(document.location.href, { cause: 'startup' });
 
+  // jack links if requested
+  if (opts.handleLinks) {
+    this._linkHandler = this._linkJacker.bind(this);
+    document.addEventListener('click', this._linkHandler);
+  }
+
   this._started = true;
 };
 
@@ -312,6 +366,7 @@ Router.prototype.stop = function stopRouting() {
   if (!(isBrowser && this._isStarted)) return;
 
   window.removeEventListener('popstate', this._popStateHandler);
+  if (this._linkHandler) document.removeEventListener('click', this._linkHandler);
 
   this._isStarted = false;
 };
