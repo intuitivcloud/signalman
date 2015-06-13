@@ -10,7 +10,7 @@
 var microevent = require('microevent'),
     purl = require('purl'),
     murl = require('murl'),
-    qs = require('query-string'),
+    paqs = require('paqs'),
     u = require('./utils');
 
 var httpSafeMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS', 'TRACE'];
@@ -69,12 +69,24 @@ Router.prototype._findRoute = function findRoute(method, path) {
   });
 };
 
-Router.prototype.dispatch = function (req, res, next) {
+/**
+ * The server-side request dispatcher
+ *
+ * @param {Object}   req  - the request object sent by the server
+ * @param {Object}   res  - the response object sent by the server
+ * @param {Function} next - the next function in the server middleware chain
+ */
+Router.prototype.serverDispatcher = function (req, res, next) {
   var parsedUrl = purl(req.url),
       path = parsedUrl.pathname,
       cause = 'httpRequest',
       route, cxt, handlerQ;
 
+  /**
+   * The next middleware iterator internal to signalman
+   *
+   * @return {Function} the next middleware function registered for the route
+   */
   function nextHandler() {
     var handler = handlerQ.shift();
 
@@ -89,17 +101,18 @@ Router.prototype.dispatch = function (req, res, next) {
   // did not find a matching route
   if (!route) return next();
 
+  // parse URL and query params
   req.params = route.matcher(path);
-  req.query = parsedUrl.search ? qs.parse(parsedUrl.search) : {};
-  handlerQ = route.handlers.slice();            // shallow copy of handlers
+  req.query = parsedUrl.search ? paqs(parsedUrl.search) : {};
+
+  handlerQ = route.handlers.slice();            // shallow copy of handlers, queued
 
   cxt = {
     cause: cause,
     path: path,
     router: this,
-    route: route,
-    req: req,
-    res: res,
+    request: req,
+    response: res,
     next: nextHandler
   };
 
@@ -110,12 +123,10 @@ Router.prototype.dispatch = function (req, res, next) {
 };
 
 Router.prototype.start = function () {
-  return this.dispatch.bind(this);
+  return this.serverDispatcher.bind(this);
 };
 
-function signalman() {
+module.exports = function signalman() {
   return new Router();
-}
-
-module.exports = signalman;
+};
 

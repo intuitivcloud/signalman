@@ -176,10 +176,10 @@ describe('signalman', function () {
         res = { status: function () {} };
         next = function () { nextCalled = true; };
         handler = function (cxt) {
-          expect(cxt.req).to.be(req);
-          expect(cxt.res).to.be(res);
-          expect(cxt.req.params).to.be.eql({});
-          expect(cxt.req.query).to.be.eql({});
+          expect(cxt.request).to.be(req);
+          expect(cxt.response).to.be(res);
+          expect(cxt.request.params).to.be.eql({});
+          expect(cxt.request.query).to.be.eql({});
           handlerCalled = true;
         };
 
@@ -202,20 +202,20 @@ describe('signalman', function () {
         res = { status: function () {} };
         next = function () { nextCalled = true; };
         middleware = function (cxt) {
-          expect(cxt.req).to.be(req);
-          expect(cxt.res).to.be(res);
-          expect(cxt.req.params).to.be.eql({});
-          expect(cxt.req.query).to.be.eql({});
-          cxt.req.middlewareInjectedValue = 'Yay middleware!';
+          expect(cxt.request).to.be(req);
+          expect(cxt.response).to.be(res);
+          expect(cxt.request.params).to.be.eql({});
+          expect(cxt.request.query).to.be.eql({});
+          cxt.request.middlewareInjectedValue = 'Yay middleware!';
           middlewareCalled = true;
           cxt.next();
         };
         handler = function (cxt) {
-          expect(cxt.req).to.be(req);
-          expect(cxt.res).to.be(res);
-          expect(cxt.req.params).to.be.eql({});
-          expect(cxt.req.query).to.be.eql({});
-          expect(cxt.req.middlewareInjectedValue).to.be('Yay middleware!');
+          expect(cxt.request).to.be(req);
+          expect(cxt.response).to.be(res);
+          expect(cxt.request.params).to.be.eql({});
+          expect(cxt.request.query).to.be.eql({});
+          expect(cxt.request.middlewareInjectedValue).to.be('Yay middleware!');
           handlerCalled = true;
         };
 
@@ -255,10 +255,10 @@ describe('signalman', function () {
         res = { status: function () {} };
         next = function () { nextCalled = true; };
         handler = function (cxt) {
-          expect(cxt.req).to.be(req);
-          expect(cxt.res).to.be(res);
-          expect(cxt.req.params).to.be.eql({ name: 'Goober' });
-          expect(cxt.req.query).to.be.eql({});
+          expect(cxt.request).to.be(req);
+          expect(cxt.response).to.be(res);
+          expect(cxt.request.params).to.be.eql({ name: 'Goober' });
+          expect(cxt.request.query).to.be.eql({});
           handlerCalled = true;
         };
 
@@ -280,10 +280,10 @@ describe('signalman', function () {
         res = { status: function () {} };
         next = function () { nextCalled = true; };
         handler = function (cxt) {
-          expect(cxt.req).to.be(req);
-          expect(cxt.res).to.be(res);
-          expect(cxt.req.params).to.be.eql({});
-          expect(cxt.req.query).to.be.eql({ st: '1', lt: '10' });
+          expect(cxt.request).to.be(req);
+          expect(cxt.response).to.be(res);
+          expect(cxt.request.params).to.be.eql({});
+          expect(cxt.request.query).to.be.eql({ st: '1', lt: '10' });
           handlerCalled = true;
         };
 
