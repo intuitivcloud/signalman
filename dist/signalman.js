@@ -83,6 +83,61 @@ var signalman =
 	// add event support
 	microevent.mixin(Router);
 
+	/**
+	 * Represents the details of a navigation performed by the router.
+	 *
+	 * A Context object is passed to all handlers in a route using which the
+	 * handlers can retrieve details about the navigation from this object
+	 *
+	 * @typedef {Object} Context
+	 *
+	 * @property {string}   cause - the cause of the navigation.
+	 * @property {string}   fullPath - the full-path of the navigation.
+	 * @property {string}   path - the path part of the navigation.
+	 * @property {Boolean}  canUseDOM - <code>true</code> if DOM is accessible;
+	 *                                  <code>false</code> if not. Use this to
+	 *                                  detect if navigation occurred on the
+	 *                                  server-side or in the browser.
+	 * @property {Object}   request - the server-side request object. Available only on
+	 *                                the server.
+	 * @property {Object}   response - the server-side response object. Available only on
+	 *                                  the server.
+	 * @property {Router}   router - the current router instance
+	 * @property {Object}   params - the URL parameters extracted. Available only on the
+	 *                                the client-side. On the server, URL parameters are
+	 *                                available via the <code>request</code> object.
+	 * @property {Object}   query - the query string parameters extracted. Available only
+	 *                              on the client-side. On the server, URL parameters are
+	 *                              available via the <code>response</code> object.
+	 */
+
+	/**
+	 * A handler function that is invoked with a navigation context
+	 *
+	 * <p>Handlers can also be specified as middleware chain for a route. If defined as a
+	 * middleware, implementations can invoke the <code>next()</code> method on the
+	 * navigation context object passed to indicate that the router can proceed to
+	 * the next middleware or handler in the chain.</p>
+	 *
+	 * @callback Handler
+	 *
+	 * @param {Context} context - the navigation context object
+	 */
+
+	/**
+	 * Represents a route definition in signalman.
+	 *
+	 * @typedef {Object} Route
+	 *
+	 * @private
+	 *
+	 * @property {string}     method - the HTTP method of this route
+	 * @property {string}     path - the path pattern used by this route to match requests
+	 * @property {Handler[]}  handlers - the handlers or middlewares for this route
+	 * @property {Object}     matcher - the matcher object that performs matching of request 
+	 *                                  with this route's path pattern
+	 */ 
+
 	// add HTTP methods as methods to the router prototype
 	httpSafeMethods.reduce(function (proto, method) {
 	  var methodName = (method === 'DELETE' ? 'DEL' : method).toLowerCase();
@@ -125,7 +180,7 @@ var signalman =
 	 * @param  {string} method - the HTTP method to match route against
 	 * @param  {string} path - the path to match the route against
 	 *
-	 * @return {Object} the route object or undefined
+	 * @return {Route|undefined} the route object or undefined
 	 */
 	Router.prototype._findRoute = function findRoute(method, path) {
 	  return u.find(this._routes, function (r) {
@@ -138,10 +193,10 @@ var signalman =
 	 *
 	 * @private
 	 *
-	 * @param {string} path - the path for which this context is to be created
-	 * @param {Route} route - the route object that will be associated with the context
-	 * @param {Function} next - the next handler
-	 * @param {Object} [state] - an optional state with additional attributes to add to context
+	 * @param {string}    path - the path for which this context is to be created
+	 * @param {Route}     route - the route object that will be associated with the context
+	 * @param {Function}  next - the next handler
+	 * @param {Object}    [state] - an optional state with additional attributes to add to context
 	 *
 	 * @return {Context} a new instance of the navigation context object
 	 */
@@ -158,7 +213,7 @@ var signalman =
 	   *
 	   * @public
 	   *
-	   * @return {Function} the next middleware function registered for the route
+	   * @return {Handler|null} the next middleware function registered for the route
 	   */
 	  function nextHandler() {
 	    var handler = handlerQ.shift();
@@ -194,7 +249,7 @@ var signalman =
 	  // did not find a matching route
 	  if (!route) return next();
 
-	  // parse URL and query params
+	  // parse URL and query params, attach to request
 	  req.params = route.matcher(path);
 	  req.query = parsedUrl.search ? paqs(parsedUrl.search) : {};
 
@@ -263,11 +318,21 @@ var signalman =
 	};
 
 	/**
+	 * The options for routing behavior
+	 *
+	 * @typedef RoutingOptions
+	 *
+	 * @property {Boolean} [autoStart=false] - <code>true</code> if the router should initialize
+	 *                                         current document's URL and call the routes registered
+	 *                                         for it. This is only required on client-side.
+	 */
+
+	/**
 	 * Starts routing
 	 *
 	 * @public
 	 *
-	 * @param {Object} opts - options for routing
+	 * @param {RoutingOptions} [opts] - options for routing
 	 */
 	Router.prototype.start = function (opts) {
 	  opts = opts || { autoStart: false };
