@@ -96,8 +96,13 @@ var signalman =
 	   * @param  {function[]} handlers - one or more handlers
 	   */
 	  proto[methodName] = function (path) {
-	    var handlers = u.arrgs(arguments).slice(1),
-	        m = murl(path);
+	    var handlers, m;
+
+	    // noop if on client and method is not GET
+	    if (isBrowser && method !== 'GET') return;
+
+	    handlers = u.arrgs(arguments).slice(1);
+	    m = murl(path);
 
 	    if (!(m in this._routes)) this._routes[m] = {};
 
