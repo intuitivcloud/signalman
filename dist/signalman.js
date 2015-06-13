@@ -3,6 +3,7 @@
  * Copyright (c) 2015 intuitivcloud Systems <engineering@intuitivcloud.com>
  * BSD-3-Clause Licensed
  */
+var signalman =
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
@@ -59,9 +60,9 @@
 
 	// module dependencies
 	var microevent = __webpack_require__(1),
-	    purl = __webpack_require__(3),
+	    purl = __webpack_require__(4),
 	    murl = __webpack_require__(2),
-	    qs = __webpack_require__(4),
+	    paqs = __webpack_require__(3),
 	    u = __webpack_require__(6);
 
 	var httpSafeMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS', 'TRACE'];
@@ -120,12 +121,24 @@
 	  });
 	};
 
-	Router.prototype.dispatch = function (req, res, next) {
+	/**
+	 * The server-side request dispatcher
+	 *
+	 * @param {Object}   req  - the request object sent by the server
+	 * @param {Object}   res  - the response object sent by the server
+	 * @param {Function} next - the next function in the server middleware chain
+	 */
+	Router.prototype.serverDispatcher = function (req, res, next) {
 	  var parsedUrl = purl(req.url),
 	      path = parsedUrl.pathname,
 	      cause = 'httpRequest',
 	      route, cxt, handlerQ;
 
+	  /**
+	   * The next middleware iterator internal to signalman
+	   *
+	   * @return {Function} the next middleware function registered for the route
+	   */
 	  function nextHandler() {
 	    var handler = handlerQ.shift();
 
@@ -140,17 +153,18 @@
 	  // did not find a matching route
 	  if (!route) return next();
 
+	  // parse URL and query params
 	  req.params = route.matcher(path);
-	  req.query = parsedUrl.search ? qs.parse(parsedUrl.search) : {};
-	  handlerQ = route.handlers.slice();            // shallow copy of handlers
+	  req.query = parsedUrl.search ? paqs(parsedUrl.search) : {};
+
+	  handlerQ = route.handlers.slice();            // shallow copy of handlers, queued
 
 	  cxt = {
 	    cause: cause,
 	    path: path,
 	    router: this,
-	    route: route,
-	    req: req,
-	    res: res,
+	    request: req,
+	    response: res,
 	    next: nextHandler
 	  };
 
@@ -161,14 +175,12 @@
 	};
 
 	Router.prototype.start = function () {
-	  return this.dispatch.bind(this);
+	  return this.serverDispatcher.bind(this);
 	};
 
-	function signalman() {
+	module.exports = function signalman() {
 	  return new Router();
-	}
-
-	module.exports = signalman;
+	};
 
 
 
@@ -323,7 +335,43 @@
 /* 3 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(global) {/*!
+	/*!
+	 * paqs
+	 * Copyright (c) 2015 intuitivcloud Systems <engineering@intuitivcloud.com>
+	 * BSD-3-Clause Licensed
+	 */
+
+	'use strict';
+
+	var rex = /([\w\d\+\.%$\-_]+)=?([\w\d\+\.%$\-_]+)?&?/g,
+	    spRex = /\+/g;
+
+	module.exports = function paqs(qs) {
+	  var params = {},
+	      dec = decodeURIComponent,
+	      isarr = Array.isArray,
+	      m, k, v;
+
+	  rex.lastIndex = 0;
+	  while ((m = rex.exec(qs)) && m.length === 3) {
+	    k = dec(m[1].replace(spRex, ' '));
+	    v = m[2] && dec(m[2].replace(spRex, ' '));
+
+	    if (k in params && isarr(params[k])) params[k].push(v);
+	    if (k in params && !isarr(params[k])) params[k] = [params[k], v];
+	    if (!(k in params)) params[k] = v;
+	  }
+
+	  return params;
+	};
+
+
+
+/***/ },
+/* 4 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/*!
 	 * purl
 	 * Copyright (c) 2015 intuitivcloud Systems <engineering@intuitivcloud.com>
 	 * BSD-3-Clause Licensed
@@ -342,7 +390,7 @@
 	 * @return {Object} an object containing the components extracted from the specified
 	 *                  URL
 	 */
-	function purl(urlToParse) {
+	module.exports = function purl(urlToParse) {
 	  var m = pathRex.exec(urlToParse),
 	      i = 1;
 
@@ -361,69 +409,8 @@
 	    search: m[i++],
 	    hash: m[i++]
 	  };
-	}
-
-	module.exports = ((global || window).purl = purl);
-
-
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
-
-/***/ },
-/* 4 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	exports.extract = function (maybeUrl) {
-		return maybeUrl.split('?')[1] || '';
 	};
 
-	exports.parse = function (str) {
-		if (typeof str !== 'string') {
-			return {};
-		}
-
-		str = str.trim().replace(/^(\?|#|&)/, '');
-
-		if (!str) {
-			return {};
-		}
-
-		return str.split('&').reduce(function (ret, param) {
-			var parts = param.replace(/\+/g, ' ').split('=');
-			var key = parts[0];
-			var val = parts[1];
-
-			key = decodeURIComponent(key);
-			// missing `=` should be `null`:
-			// http://w3.org/TR/2012/WD-url-20120524/#collect-url-parameters
-			val = val === undefined ? null : decodeURIComponent(val);
-
-			if (!ret.hasOwnProperty(key)) {
-				ret[key] = val;
-			} else if (Array.isArray(ret[key])) {
-				ret[key].push(val);
-			} else {
-				ret[key] = [ret[key], val];
-			}
-
-			return ret;
-		}, {});
-	};
-
-	exports.stringify = function (obj) {
-		return obj ? Object.keys(obj).sort().map(function (key) {
-			var val = obj[key];
-
-			if (Array.isArray(val)) {
-				return val.sort().map(function (val2) {
-					return encodeURIComponent(key) + '=' + encodeURIComponent(val2);
-				}).join('&');
-			}
-
-			return encodeURIComponent(key) + '=' + encodeURIComponent(val);
-		}).join('&') : '';
-	};
 
 
 /***/ },
