@@ -65,10 +65,13 @@ var signalman =
 	    paqs = __webpack_require__(3),
 	    u = __webpack_require__(6);
 
-	var httpSafeMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS', 'TRACE'];
+	var httpSafeMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS', 'TRACE'],
+	    isBrowser = !!(typeof window !== 'undefined' && window.document && window.document.createElement);
 
 	/**
 	 * A router that routes requests
+	 *
+	 * @public
 	 *
 	 * @class
 	 * @constructor
@@ -86,6 +89,8 @@ var signalman =
 
 	  /**
 	   * Registers the specified chain of handlers for the specified path and method
+	   *
+	   * @public
 	   *
 	   * @param  {string} path - the path to handle
 	   * @param  {function[]} handlers - one or more handlers
@@ -110,6 +115,8 @@ var signalman =
 	/**
 	 * Finds and returns the first route whose matcher matches the specified
 	 *
+	 * @private
+	 *
 	 * @param  {string} method - the HTTP method to match route against
 	 * @param  {string} path - the path to match the route against
 	 *
@@ -122,20 +129,29 @@ var signalman =
 	};
 
 	/**
-	 * The server-side request dispatcher
+	 * Builds and returns a new context object for the specified path, route and state
 	 *
-	 * @param {Object}   req  - the request object sent by the server
-	 * @param {Object}   res  - the response object sent by the server
-	 * @param {Function} next - the next function in the server middleware chain
+	 * @private
+	 *
+	 * @param {string} path - the path for which this context is to be created
+	 * @param {Route} route - the route object that will be associated with the context
+	 * @param {Function} next - the next handler
+	 * @param {Object} [state] - an optional state with additional attributes to add to context
+	 *
+	 * @return {Context} a new instance of the navigation context object
 	 */
-	Router.prototype.serverDispatcher = function (req, res, next) {
-	  var parsedUrl = purl(req.url),
-	      path = parsedUrl.pathname,
-	      cause = 'httpRequest',
-	      route, cxt, handlerQ;
+	Router.prototype._createContext = function _createContext(path, route, next, state) {
+	  var handlerQ = route.handlers.slice(),
+	      cxt = u.merge({
+	        path: path,
+	        router: this,
+	        canUseDOM: isBrowser
+	      }, state);
 
 	  /**
 	   * The next middleware iterator internal to signalman
+	   *
+	   * @public
 	   *
 	   * @return {Function} the next middleware function registered for the route
 	   */
@@ -147,6 +163,26 @@ var signalman =
 	    return handler(cxt);
 	  }
 
+	  cxt.next = nextHandler;
+
+	  return cxt;
+	};
+
+	/**
+	 * The server-side request dispatcher
+	 *
+	 * @private
+	 *
+	 * @param {Object}   req  - the request object sent by the server
+	 * @param {Object}   res  - the response object sent by the server
+	 * @param {Function} next - the next function in the server middleware chain
+	 */
+	Router.prototype._serverDispatcher = function (req, res, next) {
+	  var parsedUrl = purl(req.url),
+	      path = parsedUrl.pathname,
+	      cause = 'httpRequest',
+	      route, cxt;
+
 	  // find the route
 	  route = this._findRoute(req.method, path);
 
@@ -157,26 +193,121 @@ var signalman =
 	  req.params = route.matcher(path);
 	  req.query = parsedUrl.search ? paqs(parsedUrl.search) : {};
 
-	  handlerQ = route.handlers.slice();            // shallow copy of handlers, queued
-
-	  cxt = {
+	  // build new context
+	  cxt = this._createContext(path, route, next, {
 	    cause: cause,
-	    path: path,
-	    router: this,
 	    request: req,
-	    response: res,
-	    next: nextHandler
-	  };
+	    response: res
+	  });
 
 	  // trigger a navigating event
 	  this.trigger('navigating', {path: path, cause: cause, router: this});
 
-	  return nextHandler();
+	  return cxt.next();
 	};
 
-	Router.prototype.start = function () {
-	  return this.serverDispatcher.bind(this);
+	/**
+	 * The client-side dispatcher
+	 *
+	 * @private
+	 *
+	 * @param {string} path - the path to dispatch to
+	 * @param {Object} [state] - an optional state to be associated with the navigation
+	 */
+	Router.prototype._clientDispatcher = function (path, state) {
+	  var currPath = document.location.pathname,
+	      url = purl(path),
+	      route = this._findRoute('GET', url.pathname),
+	      cxt, newState;
+
+	  if (!route) {
+	    this.trigger('notFound', path);
+	    return;
+	  }
+
+	  // build new context
+	  cxt = this._createContext(url.pathname, route, u.noop, {
+	    fullPath: path,
+	    cause: (state.cause || 'navigation'),
+	    params: (state.params || route.matcher(url.pathname)),
+	    query: (state.query || paqs(url.search))
+	  });
+
+	  // cherry-pick only serializable stuff from context
+	  newState = u.pick(cxt, ['fullPath', 'path', 'params', 'query', 'cause']);
+
+	  if (currPath === url.pathname)
+	    window.history.replaceState(newState, null, path);
+	  else
+	    window.history.pushState(newState, null, path);
+
+	  // invoke the first handler/middleware
+	  cxt.next();
 	};
+
+	/**
+	 * The client-side popState event handler
+	 *
+	 * @private
+	 *
+	 * @param {Object} e - the popState event object
+	 */
+	Router.prototype._onPopState = function (e) {
+	  var state = e.state;
+	  this._clientDispatcher(state.fullPath, state);
+	};
+
+	/**
+	 * Starts routing
+	 *
+	 * @public
+	 *
+	 * @param {Object} opts - options for routing
+	 */
+	Router.prototype.start = function (opts) {
+	  opts = opts || { autoStart: false };
+
+	  // already running, noop
+	  if (this._isStarted) return undefined;
+
+	  // if on server, use server dispatcher
+	  if (!isBrowser) return this._serverDispatcher.bind(this);
+
+	  this._popStateHandler = this._onPopState.bind(this);
+
+	  // attach client dispatcher
+	  window.addEventListener('popstate', this._popStateHandler);
+
+	  // navigate to current document URL if autoStart specified
+	  if (opts.autoStart)
+	    this.navigateTo(document.location.href, { cause: 'startup' });
+
+	  this._started = true;
+	};
+
+	/**
+	 * Stops routing client-side navigation
+	 *
+	 * @public
+	 */
+	Router.prototype.stop = function stopRouting() {
+	  if (!(isBrowser && this._isStarted)) return;
+
+	  window.removeEventListener('popstate', this._popStateHandler);
+
+	  this._isStarted = false;
+	};
+
+	// add the navigateTo method only if we are in a browser
+	if (isBrowser)
+	  /**
+	   * Triggers navigation to the specified path
+	   *
+	   * @public
+	   */
+	  Router.prototype.navigateTo = function (path) {
+	    this._clientDispatcher(path, {cause: 'navigation'});
+	  };
 
 	module.exports = function signalman() {
 	  return new Router();
@@ -450,7 +581,7 @@ var signalman =
 	 * @return {*|undefined} the first item in the array which tests positive
 	 *                        with the predicate
 	 */
-	exports.find = function find(items, predicate) {
+	function find(items, predicate) {
 	  var i = 0;
 
 	  for (;i < items.length; i += 1)
@@ -466,9 +597,70 @@ var signalman =
 	 * @return {Array} an array containing the items passed in the specified
 	 *                  arguments object
 	 */
-	exports.arrgs = function arrgs(args) {
+	function arrgs(args) {
 	  return Array.prototype.slice.call(args);
 	}
+
+	/**
+	 * Returns the a new object after mergining all the attributes
+	 * from all of the specified source objects.
+	 *
+	 * It does not modify any of the objects. Successive source objects'
+	 * attributes will overwrite attributes with same names from
+	 * previous source objects.
+	 *
+	 * This method can also be used to make shallow copies of objects.
+	 *
+	 * @param {Object|Object...} sources - the source objects to merge
+	 *                                      attributes from
+	 *
+	 * @return {Object} a new object with attributes from all specified
+	 *                  source objects
+	 */
+	function merge() {
+	  var args = arrgs(arguments),
+	      dest = {};
+
+	  args.forEach(function (src) {
+	    dest = Object.keys(src).reduce(function (d, k) {
+	      d[k] = src[k];
+	      return d;
+	    }, dest);
+	  });
+
+	  return dest;
+	}
+
+	/**
+	 * A no-op function.
+	 */
+	function noop() {}
+
+	/**
+	 * Returns an object with the attributes from the specified
+	 * source object whose names are present in the specified
+	 * property names
+	 *
+	 * @param {Object} src - the object to extract the attributes from
+	 * @param {string[]} propName - the names of the attributes to extract
+	 *
+	 * @return {Object} an object with the specified attributes from source object
+	 */
+	function pick(src, propNames) {
+	  return propNames.reduce(function (dest, name) {
+	    if (!(name in src)) return dest;
+	    dest[name] = src[name];
+	    return dest;
+	  }, {});
+	}
+
+	module.exports = {
+	  find: find,
+	  arrgs: arrgs,
+	  merge: merge,
+	  noop: noop,
+	  pick: pick
+	};
 
 
 
