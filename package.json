@@ -38,7 +38,7 @@
   "dependencies": {
     "microevent": "^1.0.0",
     "murl": "^0.4.1",
-    "paqs": "^1.0.0",
-    "purl": "^1.0.2"
+    "paqs": "^1.0.1",
+    "purl": "^1.0.3"
   }
 }
