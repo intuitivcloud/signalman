@@ -91,24 +91,24 @@ var signalman =
 	 *
 	 * @typedef {Object} Context
 	 *
-	 * @property {string}   cause - the cause of the navigation.
-	 * @property {string}   fullPath - the full-path of the navigation.
-	 * @property {string}   path - the path part of the navigation.
+	 * @property {string}   cause     - the cause of the navigation.
+	 * @property {string}   fullPath  - the full-path of the navigation.
+	 * @property {string}   path      - the path part of the navigation.
 	 * @property {Boolean}  canUseDOM - <code>true</code> if DOM is accessible;
 	 *                                  <code>false</code> if not. Use this to
 	 *                                  detect if navigation occurred on the
 	 *                                  server-side or in the browser.
-	 * @property {Object}   request - the server-side request object. Available only on
-	 *                                the server.
-	 * @property {Object}   response - the server-side response object. Available only on
+	 * @property {Object}   request   - the server-side request object. Available only on
 	 *                                  the server.
-	 * @property {Router}   router - the current router instance
-	 * @property {Object}   params - the URL parameters extracted. Available only on the
-	 *                                the client-side. On the server, URL parameters are
-	 *                                available via the <code>request</code> object.
-	 * @property {Object}   query - the query string parameters extracted. Available only
-	 *                              on the client-side. On the server, URL parameters are
-	 *                              available via the <code>response</code> object.
+	 * @property {Object}   response  - the server-side response object. Available only on
+	 *                                  the server.
+	 * @property {Router}   router    - the current router instance
+	 * @property {Object}   params    - the URL parameters extracted. Available only on the
+	 *                                  the client-side. On the server, URL parameters are
+	 *                                  available via the <code>request</code> object.
+	 * @property {Object}   query     - the query string parameters extracted. Available only
+	 *                                  on the client-side. On the server, URL parameters are
+	 *                                  available via the <code>response</code> object.
 	 */
 
 	/**
@@ -131,11 +131,11 @@ var signalman =
 	 *
 	 * @private
 	 *
-	 * @property {string}     method - the HTTP method of this route
-	 * @property {string}     path - the path pattern used by this route to match requests
+	 * @property {string}     method   - the HTTP method of this route
+	 * @property {string}     path     - the path pattern used by this route to match requests
 	 * @property {Handler[]}  handlers - the handlers or middlewares for this route
-	 * @property {Object}     matcher - the matcher object that performs matching of request
-	 *                                  with this route's path pattern
+	 * @property {Object}     matcher  - the matcher object that performs matching of request
+	 *                                   with this route's path pattern
 	 */
 
 	// add HTTP methods as methods to the router prototype
@@ -147,7 +147,7 @@ var signalman =
 	   *
 	   * @public
 	   *
-	   * @param  {string} path - the path to handle
+	   * @param  {string}     path     - the path to handle
 	   * @param  {function[]} handlers - one or more handlers
 	   */
 	  proto[methodName] = function (path) {
@@ -178,7 +178,7 @@ var signalman =
 	 * @private
 	 *
 	 * @param  {string} method - the HTTP method to match route against
-	 * @param  {string} path - the path to match the route against
+	 * @param  {string} path   - the path to match the route against
 	 *
 	 * @return {Route|undefined} the route object or undefined
 	 */
@@ -271,7 +271,7 @@ var signalman =
 	 *
 	 * @private
 	 *
-	 * @param {string} path - the path to dispatch to
+	 * @param {string} path    - the path to dispatch to
 	 * @param {Object} [state] - an optional state to be associated with the navigation
 	 */
 	Router.prototype._clientDispatcher = function (path, state) {
@@ -366,13 +366,13 @@ var signalman =
 	 *
 	 * @typedef RoutingOptions
 	 *
-	 * @property {Boolean} [autoStart=false] - <code>true</code> if the router should initialize
-	 *                                         current document's URL and call the routes registered
-	 *                                         for it. This is only available on the client-side.
+	 * @property {Boolean} [autoStart=false]  - <code>true</code> if the router should initialize
+	 *                                          current document's URL and call the routes registered
+	 *                                          for it. This is only available on the client-side.
 	 *
 	 * @property {Boolean} [handleLinks=true] - <code>true</code> if the router should intercept all
-	 *                                         links on the current document and handle it. This is
-	 *                                         only available on the client-side
+	 *                                          links on the current document and handle it. This is
+	 *                                          only available on the client-side
 	 */
 
 	/**
