@@ -19,15 +19,15 @@ function causePrinter(cxt) {
 }
 
 router.get('/', causePrinter, function (cxt) {
-  cxt.res.status(200).send('Hello World\n');
+  cxt.response.status(200).send('Hello World\n');
 });
 
 router.get('/hello/{name}', causePrinter, function (cxt) {
-  var req = cxt.req,
+  var req = cxt.request,
       params = req.params;
 
   setTimeout(function () {
-    cxt.res.status(200).send('Hello, ' + params.name);
+    cxt.response.status(200).send('Hello, ' + params.name);
   }, 5000);
 });
 

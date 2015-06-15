@@ -1,6 +1,6 @@
 {
   "name": "signalman",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "An isomorphic router to build web applications",
   "main": "index.js",
   "scripts": {
@@ -23,6 +23,7 @@
   },
   "homepage": "https://github.com/intuitivcloud/signalman#readme",
   "devDependencies": {
+    "expect.js": "^0.3.1",
     "express": "^4.12.4",
     "gulp": "^3.9.0",
     "gulp-eslint": "^0.13.2",
@@ -30,12 +31,15 @@
     "gulp-load-plugins": "^0.10.0",
     "gulp-mocha": "^2.1.1",
     "gulp-util": "^3.0.5",
+    "jsdom": "^3.1.2",
     "node-libs-browser": "^0.5.2",
+    "proxyquire": "^1.5.0",
     "webpack": "^1.9.10"
   },
   "dependencies": {
     "microevent": "^1.0.0",
     "murl": "^0.4.1",
-    "query-string": "^2.3.0"
+    "paqs": "^1.0.1",
+    "purl": "^1.0.3"
   }
 }
