@@ -1,3 +1,9 @@
+/*!
+ * signalman
+ * Copyright (c) 2015 intuitivcloud Systems <engineering@intuitivcloud.com>
+ * BSD-3-Clause Licensed
+ */
+
 /* global describe, it, beforeEach, afterEach */
 
 'use strict';
