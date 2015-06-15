@@ -24,7 +24,9 @@ module.exports = [
     entry: './index.js',
     output: {
       path: path.join(__dirname, 'dist'),
-      filename: 'signalman.js'
+      filename: 'signalman.js',
+      library: 'signalman',
+      libraryTarget: 'var'
     },
     target: 'web',
     cache: false,
@@ -36,7 +38,9 @@ module.exports = [
     entry: './index.js',
     output: {
       path: path.join(__dirname, 'dist'),
-      filename: 'signalman.min.js'
+      filename: 'signalman.min.js',
+      library: 'signalman',
+      libraryTarget: 'var'
     },
     target: 'web',
     cache: false,
