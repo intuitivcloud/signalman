@@ -346,7 +346,7 @@ Router.prototype.start = function (opts) {
 
   // navigate to current document URL if autoStart specified
   if (opts.autoStart)
-    this.navigateTo(document.location.href, { cause: 'startup' });
+    this._clientDispatcher(document.location.href, {cause: 'startup'});
 
   // jack links if requested
   if (opts.handleLinks) {
