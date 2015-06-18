@@ -15,13 +15,12 @@ var path = require('path'),
 var context = describe;
 
 function doInBrowser(workTodo) {
-  var signalman = fs.readFileSync(path.join(__dirname, '../dist/signalman.js')),
-      bean = fs.readFileSync(path.join(__dirname, '../node_modules/bean/bean.min.js'));
+  var signalman = fs.readFileSync(path.join(__dirname, '../dist/signalman.js'));
 
   jsdom.env({
     html: '<!doctype html><html><head></head><body><div id="content"></div></body></html>',
     url: 'http://localhost:3000/hello/Goober?confirm=1',
-    src: [signalman, bean],
+    src: [signalman],
     done: function (err, window) {
       if (err) return expect().fail(err);
       workTodo(window);
