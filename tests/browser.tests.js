@@ -15,12 +15,13 @@ var path = require('path'),
 var context = describe;
 
 function doInBrowser(workTodo) {
-  var signalman = fs.readFileSync(path.join(__dirname, '../dist/signalman.js'));
+  var signalman = fs.readFileSync(path.join(__dirname, '../dist/signalman.js')),
+      bean = fs.readFileSync(path.join(__dirname, '../node_modules/bean/bean.min.js'));
 
   jsdom.env({
-    html: '<!doctype html><html><head></head><body></body></html>',
+    html: '<!doctype html><html><head></head><body><div id="content"></div></body></html>',
     url: 'http://localhost:3000/hello/Goober?confirm=1',
-    src: [signalman],
+    src: [signalman, bean],
     done: function (err, window) {
       if (err) return expect().fail(err);
       workTodo(window);
@@ -194,6 +195,59 @@ describe('signalman', function () {
 
         expect(rightHandlerCalled).to.be(true);
         expect(wrongHandlerCalled).to.be(false);
+      });
+
+      it.skip('should intercept clicks on links and navigate through router', function () {
+        doInBrowser(function (window) {
+          var signalman = window.signalman,
+              document = window.document,
+              router = signalman(),
+              homePageHandlerCalled = false,
+              helloPageHandlerCalled = false,
+              homePageHandler = function (cxt) {
+                var c = document.getElementById('content');
+
+                c.innerHTML = '<a id="helloLink" href="/greet/John%20Doe?confirm=1">Click Me</a>';
+                document.title = 'Welcome';
+
+                homePageHandlerCalled = true;
+              },
+              helloPageHandler = function (cxt) {
+                expect(cxt.params.name).to.be('John Doe');
+                expect(cxt.query.confirm).to.be('1');
+
+                document.title = 'Hello';
+
+                helloPageHandlerCalled = true;
+              },
+              link, evt;
+
+          console.log(router._routes);
+
+          router.get('/', homePageHandler);
+          router.get('/greet/{name}', helloPageHandler);
+
+          router.start();
+
+          router.navigateTo('/');
+
+          expect(homePageHandlerCalled).to.be(true);
+
+
+          evt = document.createEvent('MouseEvents');
+          evt.initEvent('click', true, true, window, 0,
+                        evt.screenX, evt.screenY,
+                        evt.clientX, evt.clientY,
+                        false, false, false, false, 0, null);
+
+          evt.button = 1;
+          evt.which = null;
+
+          link = document.getElementById('helloLink');
+          link.dispatchEvent(evt);
+
+          expect(helloPageHandlerCalled).to.be(true);
+        });
       });
 
       afterEach(function () {
