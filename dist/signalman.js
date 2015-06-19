@@ -215,17 +215,43 @@ var signalman =
 	   *
 	   * @return {Handler|null} the next middleware function registered for the route
 	   */
-	  function nextHandler() {
-	    var handler = handlerQ.shift();
+	  function nextHandler(err) {
+	    var handler;
+
+	    // stop if a handler throws an error
+	    if (err) return next(err);
+
+	    handler = handlerQ.shift();
 
 	    if (!handler) return next();
 
-	    return handler(cxt);
+	    try {
+	      return handler(cxt);
+	    } catch (err) {
+	      return next(err);
+	    }
 	  }
 
 	  cxt.next = nextHandler;
 
 	  return cxt;
+	};
+
+	/**
+	 * A terminating route for client-side routing
+	 *
+	 * @param  {string}   path  - the path of the route
+	 * @param  {Function} next  - the underlying next call
+	 * @param  {Object}   [err] - an optional error object
+	 */
+	Router.prototype._stubRoute = function (path, method, next, err) {
+	  if (err) this.trigger('error', {
+	    path: path,
+	    method: method,
+	    router: this,
+	    error: err
+	  });
+	  next(err);
 	};
 
 	/**
@@ -247,24 +273,35 @@ var signalman =
 	  route = this._findRoute(req.method, path);
 
 	  // did not find a matching route
-	  if (!route) return next();
+	  if (!route) {
+	    this.trigger('notFound', { path: req.url, method: req.method, router: this });
+	    return next();
+	  }
 
 	  // parse URL and query params, attach to request
 	  req.params = route.matcher(path);
 	  req.query = parsedUrl.search ? paqs(parsedUrl.search) : {};
 
 	  // build new context
-	  cxt = this._createContext(path, route, next, {
+	  cxt = this._createContext(path, route,
+	    this._stubRoute.bind(this, req.url, req.method, next), {
+	    fullPath: req.url,
 	    cause: cause,
 	    request: req,
 	    response: res
 	  });
 
 	  // trigger a navigating event
-	  this.trigger('navigating', {path: path, cause: cause, router: this});
+	  this.trigger('navigating', {
+	    path: path,
+	    method: req.method,
+	    cause: cause,
+	    router: this
+	  });
 
 	  return cxt.next();
 	};
+
 
 	/**
 	 * The client-side dispatcher
@@ -276,19 +313,21 @@ var signalman =
 	 */
 	Router.prototype._clientDispatcher = function (path, state) {
 	  var currPath = document.location.pathname,
+	      cause = (state.cause || 'navigation'),
 	      url = purl(path),
 	      route = this._findRoute('GET', url.pathname),
 	      cxt, newState;
 
 	  if (!route) {
-	    this.trigger('notFound', path);
+	    this.trigger('notFound', { path: path, method: 'GET', router: this });
 	    return;
 	  }
 
 	  // build new context
-	  cxt = this._createContext(url.pathname, route, u.noop, {
+	  cxt = this._createContext(url.pathname, route,
+	    this._stubRoute.bind(this, path, 'GET', u.noop), {
 	    fullPath: path,
-	    cause: (state.cause || 'navigation'),
+	    cause: cause,
 	    params: (state.params || route.matcher(url.pathname)),
 	    query: (state.query || paqs(url.search))
 	  });
@@ -303,6 +342,14 @@ var signalman =
 
 	  // invoke the first handler/middleware
 	  cxt.next();
+
+	  // trigger a navigating event
+	  this.trigger('navigating', {
+	    path: path,
+	    method: 'GET',
+	    cause: cause,
+	    router: this
+	  });
 	};
 
 	/**
@@ -499,7 +546,7 @@ var signalman =
 
 /***/ },
 /* 2 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ function(module, exports) {
 
 	var rewrite = function(pattern, visit) {
 		var captures = [];
@@ -589,7 +636,7 @@ var signalman =
 
 /***/ },
 /* 3 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ function(module, exports) {
 
 	/*!
 	 * paqs
@@ -625,7 +672,7 @@ var signalman =
 
 /***/ },
 /* 4 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ function(module, exports) {
 
 	/*!
 	 * purl
@@ -671,7 +718,7 @@ var signalman =
 
 /***/ },
 /* 5 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ function(module, exports) {
 
 	module.exports = function(module) {
 		if(!module.webpackPolyfill) {
@@ -687,7 +734,7 @@ var signalman =
 
 /***/ },
 /* 6 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ function(module, exports) {
 
 	/*!
 	 * signalman
