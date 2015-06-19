@@ -18,10 +18,10 @@
     "no-debugger": 2,
     "no-unused-vars": [2, {"args":"none"}],
     "curly": [2, "multi"],
-    "brace-style": [2, "stroustrup", { "allowSingleLine": true }],
+    "brace-style": [2, "1tbs", { "allowSingleLine": true }],
     "no-underscore-dangle": 0,
     "no-multi-spaces": 0,
     "key-spacing": 0,
-    "no-shadow": 0
+    "no-shadow": 0,
   }
 }
