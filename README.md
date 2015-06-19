@@ -132,14 +132,14 @@ Registers the specified handler(s) to be invoked in their specified sequence whe
 
 | HTTP Method | Router Method Name | Supported in Browser? |
 | ----------- | ------------------ | --------------------- |
-| `GET`	    | `get`              | yes |
-| `POST`      | `post`             | no  |
-| `PUT`       | `put`              | no  |
-| `DELETE`    | `del`              | no  |
-| `PATCH`     | `patch`            | no  |
-| `HEAD`      | `head`             | no  |
-| `OPTIONS`   | `options`          | no  |
-| `TRACE`     | `trace`            | no  |
+| `GET`	      | `get`              | yes                   |
+| `POST`      | `post`             | no                    |
+| `PUT`       | `put`              | no                    |
+| `DELETE`    | `del`              | no                    |
+| `PATCH`     | `patch`            | no                    |
+| `HEAD`      | `head`             | no                    |
+| `OPTIONS`   | `options`          | no                    |
+| `TRACE`     | `trace`            | no                    |
 
 ##### Parameters:
 
@@ -246,27 +246,27 @@ A Context object is passed to all handlers in a route using which the handlers c
 
 #### Attributes on Context Object
 
-| Name   | Type     | Description           | Available on Server | Available in Browser |
-| ------------ | ------------------ | --------------------- | ---------- | ------------ |
-| `cause` | string   | Cause of the navigation | yes | yes |
-| `fullPath` | string   | The full URL of the navigation | yes | yes |
-| `path` | string   | The path part of the URL of the navigation | yes | yes |
-| `canUseDOM` | boolean   | `true` if browser DOM is accessible; `false` if not. | yes | yes |
-| `router` | object   | The instance of the router which initiated the navigation | yes | yes |
-| `request` | object   | The underlying request object provided by the server | yes | no |
-| `request.params` | object | The URL parameters parsed by the router. Empty if none. | yes | no |
-| `request.query` | object | The query-string parameters parsed by the router. Empty if none. | yes | no |
-| `response` | object   | The underlying response object provided by the server | yes | no |
-| `params` | object | The URL parameters parsed by the router. Empty if none. | no | yes |
-| `query` | object | The query-string parameters parsed by the router. Empty if none. | no | yes |
+| Name              | Type     | Description                                                      | Available on Server | Available in Browser |
+| ----------------- | -------- | ---------------------------------------------------------------- | ------------------- | -------------------- |
+| `cause`           | string   | Cause of the navigation                                          | yes                 | yes                  |
+| `fullPath`        | string   | The full URL of the navigation                                   | yes                 | yes                  |
+| `path`            | string   | The path part of the URL of the navigation                       | yes                 | yes                  |
+| `canUseDOM`       | boolean  | `true` if browser DOM is accessible; `false` if not.             | yes                 | yes                  |
+| `router`          | object   | The instance of the router which initiated the navigation        | yes                 | yes                  |
+| `request`         | object   | The underlying request object provided by the server             | yes                 | no                   |
+| `request.params`  | object   | The URL parameters parsed by the router. Empty if none.          | yes                 | no                   |
+| `request.query`   | object   | The query-string parameters parsed by the router. Empty if none. | yes                 | no                   |
+| `response`        | object   | The underlying response object provided by the server            | yes                 | no                   |
+| `params`          | object   | The URL parameters parsed by the router. Empty if none.          | no                  | yes                  |
+| `query`           | object   | The query-string parameters parsed by the router. Empty if none. | no                  | yes                  |
 
 ### Routing Events
 
-| Event Name   | Details passed     | Description           |
-| ------------ | ------------------ | --------------------- |
-| `navigating` | `path`, `router`   | triggered when router is navigating to a new route |
-| `notFound`   | `path`, `router`   | triggered when the router did not find a route matching the path |
-| `error`      | `path`, `error`, `router` | triggered when a route handler/middleware threw an error while executing |
+| Event Name   | Details passed                             | Description                                                              |
+| ------------ | ------------------------------------------ | ------------------------------------------------------------------------ |
+| `navigating` | `path`, `method`, `cause`,  `router`       | triggered when router is navigating to a new route                       |
+| `notFound`   | `path`, `method`, `router`                 | triggered when the router did not find a route matching the path         |
+| `error`      | `path`, `method`, `error`, `router`        | triggered when a route handler/middleware threw an error while executing |
 
 ## License
 

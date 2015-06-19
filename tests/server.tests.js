@@ -199,11 +199,35 @@ describe('signalman', function () {
 
         });
 
+        it('should emit notFound event and call server next if no route found matching to request path', function () {
+          var notFoundEventHandlerCalled = false,
+              nextCalled = false,
+              req, res, next, notFoundEventHandler;
+
+          req = { url: '/', method: 'GET' };
+          res = { status: function () {} };
+          next = function () { nextCalled = true; };
+          notFoundEventHandler = function (evt) {
+            expect(evt.path).to.be('/');
+            expect(evt.method).to.be('GET');
+            expect(evt.router).to.be(router);
+            notFoundEventHandlerCalled = true;
+          };
+
+          router.bind('notFound', notFoundEventHandler);
+
+          router.start()(req, res, next);
+
+          expect(notFoundEventHandlerCalled).to.be(true);
+          expect(nextCalled).to.be(true);
+        });
+
         it('should handle a GET request by calling all middlewares and handler for the route with any changes made by middlewares', function () {
           var middlewareCalled = false,
               handlerCalled = false,
+              navEventTriggered = false,
               nextCalled = false,
-              req, res, next, middleware, handler;
+              req, res, next, middleware, handler, navEventHandler;
 
           req = { url: '/', method: 'GET' };
           res = { status: function () {} };
@@ -225,14 +249,24 @@ describe('signalman', function () {
             expect(cxt.request.middlewareInjectedValue).to.be('Yay middleware!');
             handlerCalled = true;
           };
+          navEventHandler = function (evt) {
+            expect(evt.path).to.be('/');
+            expect(evt.method).to.be('GET');
+            expect(evt.cause).to.be('httpRequest');
+            expect(evt.router).to.be(router);
+            navEventTriggered = true;
+          };
 
           router.get('/', middleware, handler);
+
+          router.bind('navigating', navEventHandler);
 
           router.start()(req, res, next);
 
           expect(middlewareCalled).to.be(true);
           expect(handlerCalled).to.be(true);
           expect(nextCalled).to.be(false);
+          expect(navEventTriggered).to.be(true);
         });
 
         it('should pass control to next middleware if no route registered for path', function () {
@@ -302,6 +336,103 @@ describe('signalman', function () {
           expect(nextCalled).to.be(false);
 
         });
+
+        it('should pass error to server next if handler calls router next with an error', function () {
+          var handlerCalled = false,
+              nextCalled = false,
+              req, res, next, handler;
+
+          req = { url: '/?st=1&lt=10', method: 'GET' };
+          res = { status: function () {} };
+          next = function (err) {
+            expect(err).to.be.eql({message: 'Error!'});
+            nextCalled = true;
+          };
+          handler = function (cxt) {
+            handlerCalled = true;
+            cxt.next({message: 'Error!'});
+          };
+
+          router.get('/', handler);
+
+          router.start()(req, res, next);
+
+          expect(handlerCalled).to.be(true);
+          expect(nextCalled).to.be(true);
+
+        });
+
+      });
+
+      it('should stop routing if middleware calls router next with an error', function () {
+        var middlewareCalled = false,
+            handlerCalled = false,
+            nextCalled = false,
+            req, res, next, ware, handler;
+
+        req = { url: '/?st=1&lt=10', method: 'GET' };
+        res = { status: function () {} };
+        next = function (err) {
+          expect(err).to.be.eql({message: 'Error!'});
+          nextCalled = true;
+        };
+        ware = function (cxt) {
+          middlewareCalled = true;
+          cxt.next({message: 'Error!'});
+        };
+        handler = function (cxt) {
+          handlerCalled = true;
+        };
+
+        router.get('/', ware, handler);
+
+        router.start()(req, res, next);
+
+        expect(middlewareCalled).to.be(true);
+        expect(nextCalled).to.be(true);
+        expect(handlerCalled).to.be(false);
+
+      });
+
+      it('should emit error event if middleware calls router next with an error', function () {
+        var middlewareCalled = false,
+            handlerCalled = false,
+            errorEventTriggered = false,
+            nextCalled = false,
+            req, res, next, ware, handler, errorEventListener;
+
+        req = { url: '/?st=1&lt=10', method: 'GET' };
+        res = { status: function () {} };
+        next = function (err) {
+          expect(err).to.be.eql({message: 'Error!'});
+          nextCalled = true;
+        };
+        ware = function (cxt) {
+          middlewareCalled = true;
+          cxt.next({message: 'Error!'});
+        };
+        handler = function (cxt) {
+          handlerCalled = true;
+        };
+        errorEventListener = function (evt) {
+          expect(evt.path).to.be('/?st=1&lt=10');
+          expect(evt.method).to.be('GET');
+          expect(evt.router).to.be(router);
+          expect(evt.error).to.be.eql({
+            message: 'Error!'
+          });
+          errorEventTriggered = true;
+        };
+
+        router.get('/', ware, handler);
+        router.bind('error', errorEventListener);
+
+        router.start()(req, res, next);
+
+        expect(middlewareCalled).to.be(true);
+        expect(nextCalled).to.be(true);
+        expect(handlerCalled).to.be(false);
+        expect(errorEventTriggered).to.be(true);
 
       });
 
