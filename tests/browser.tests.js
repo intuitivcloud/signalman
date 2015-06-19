@@ -105,11 +105,10 @@ describe('signalman', function () {
         expect(router._routes).to.be.empty();
       });
 
-      it('should navigate to the initial route on start when autoStart is not set', function () {
+      it('should not navigate to the initial route on start when autoStart is not set', function () {
         var rightHandlerCalled = false,
             wrongHandlerCalled = false,
             handler = function (cxt) {
-              expect(cxt.cause).to.be('startup');
               rightHandlerCalled = true;
             };
 
@@ -122,32 +121,54 @@ describe('signalman', function () {
         expect(wrongHandlerCalled).to.be(false);
       });
 
-      it('should not navigate to the initial route on start when autoStart is set', function () {
+      it('should navigate to the initial route on start when autoStart is set', function () {
         var rightHandlerCalled = false,
             wrongHandlerCalled = false,
+            navEventTriggered = false,
             handler = function (cxt) {
+              expect(cxt.cause).to.be('startup');
               rightHandlerCalled = true;
+            },
+            navEventHandler = navEventHandler = function (evt) {
+              expect(evt.path).to.be('http://localhost:3000/hello/Goober?confirm=1');
+              expect(evt.method).to.be('GET');
+              expect(evt.cause).to.be('startup');
+              expect(evt.router).to.be(router);
+              navEventTriggered = true;
             };
 
         router.get('/', function () { wrongHandlerCalled = true; });
         router.get('/hello/{name}', handler);
 
+        router.bind('navigating', navEventHandler);
+
         router.start({ autoStart: true });
 
         expect(rightHandlerCalled).to.be(true);
         expect(wrongHandlerCalled).to.be(false);
+        expect(navEventTriggered).to.be(true);
       });
 
       it('should navigate to the specified route', function () {
         var rightHandlerCalled = false,
             wrongHandlerCalled = false,
+            navEventTriggered = false,
             handler = function (cxt) {
               expect(cxt.cause).to.be('navigation');
               rightHandlerCalled = true;
+            },
+            navEventHandler = navEventHandler = function (evt) {
+              expect(evt.path).to.be('/');
+              expect(evt.method).to.be('GET');
+              expect(evt.cause).to.be('navigation');
+              expect(evt.router).to.be(router);
+              navEventTriggered = true;
             };
 
         router.get('/hello/{name}', function () { wrongHandlerCalled = true; });
         router.get('/', handler);
+
+        router.bind('navigating', navEventHandler);
 
         router.start();
 
@@ -155,6 +176,163 @@ describe('signalman', function () {
 
         expect(rightHandlerCalled).to.be(true);
         expect(wrongHandlerCalled).to.be(false);
+        expect(navEventTriggered).to.be(true);
+      });
+
+      it('should emit error event if route handler throws error', function () {
+        var rightHandlerCalled = false,
+            wrongHandlerCalled = false,
+            errorEventHandlerCalled = false,
+            handler = function (cxt) {
+              rightHandlerCalled = true;
+              throw { message: 'Error!' };
+            },
+            errorEventHandler = function (evt) {
+              expect(evt.path).to.be('/');
+              expect(evt.method).to.be('GET');
+              expect(evt.error).to.be.eql({ message: 'Error!' });
+              expect(evt.router).to.be(router);
+              errorEventHandlerCalled = true;
+            };
+
+        router.get('/', handler);
+
+        router.bind('error', errorEventHandler);
+
+        router.start();
+
+        router.navigateTo('/');
+
+        expect(rightHandlerCalled).to.be(true);
+        expect(wrongHandlerCalled).to.be(false);
+        expect(errorEventHandlerCalled).to.be(true);
+      });
+
+      it('should emit notFound event if no route was found matching the navigation path', function () {
+        var notFoundEventHandlerCalled = false,
+            notFoundEventHandler = function (evt) {
+              expect(evt.path).to.be('/');
+              expect(evt.method).to.be('GET');
+              expect(evt.router).to.be(router);
+              notFoundEventHandlerCalled = true;
+            };
+
+        router.bind('notFound', notFoundEventHandler);
+
+        router.start();
+
+        router.navigateTo('/');
+
+        expect(notFoundEventHandlerCalled).to.be(true);
+      });
+
+      it('should emit error event if route handler calls next with error', function () {
+        var rightHandlerCalled = false,
+            wrongHandlerCalled = false,
+            errorEventHandlerCalled = false,
+            handler = function (cxt) {
+              rightHandlerCalled = true;
+              cxt.next({ message: 'Error!' });
+            },
+            errorEventHandler = function (evt) {
+              expect(evt.path).to.be('/');
+              expect(evt.method).to.be('GET');
+              expect(evt.error).to.be.eql({ message: 'Error!' });
+              expect(evt.router).to.be(router);
+              errorEventHandlerCalled = true;
+            };
+
+        router.get('/', handler);
+
+        router.bind('error', errorEventHandler);
+
+        router.start();
+
+        router.navigateTo('/');
+
+        expect(rightHandlerCalled).to.be(true);
+        expect(wrongHandlerCalled).to.be(false);
+        expect(errorEventHandlerCalled).to.be(true);
+      });
+
+      it('should navigate to the specified route calling all middleware and handlers', function () {
+        var rightHandlerCalled = false,
+            wrongHandlerCalled = false,
+            middlewareCalled = false,
+            handler = function (cxt) {
+              expect(cxt.cause).to.be('navigation');
+              rightHandlerCalled = true;
+            },
+            middleware = function (cxt) {
+              middlewareCalled = true;
+              cxt.next();
+            };
+
+        router.get('/hello/{name}', function () { wrongHandlerCalled = true; });
+        router.get('/', middleware, handler);
+
+        router.start();
+
+        router.navigateTo('/');
+
+        expect(rightHandlerCalled).to.be(true);
+        expect(wrongHandlerCalled).to.be(false);
+        expect(middlewareCalled).to.be(true);
+      });
+
+      it('should stop navigate to the route handler if middleware invokes next with error', function () {
+        var rightHandlerCalled = false,
+            middlewareCalled = false,
+            handler = function (cxt) {
+              expect(cxt.cause).to.be('navigation');
+              rightHandlerCalled = true;
+            },
+            middleware = function (cxt) {
+              middlewareCalled = true;
+              cxt.next({ message: 'Error!' });
+            };
+
+        router.get('/', middleware, handler);
+
+        router.start();
+
+        router.navigateTo('/');
+
+        expect(middlewareCalled).to.be(true);
+        expect(rightHandlerCalled).to.be(false);
+      });
+
+      it('should emit error event if middleware invokes next with error', function () {
+        var rightHandlerCalled = false,
+            middlewareCalled = false,
+            errorEventHandlerCalled = false,
+            handler = function (cxt) {
+              expect(cxt.cause).to.be('navigation');
+              rightHandlerCalled = true;
+            },
+            middleware = function (cxt) {
+              middlewareCalled = true;
+              cxt.next({ message: 'Error!' });
+            },
+            errorEventHandler = function (evt) {
+              expect(evt.path).to.be('/');
+              expect(evt.method).to.be('GET');
+              expect(evt.error).to.be.eql({ message: 'Error!' });
+              expect(evt.router).to.be(router);
+              errorEventHandlerCalled = true;
+            };
+
+        router.get('/', middleware, handler);
+
+        router.bind('error', errorEventHandler);
+
+        router.start();
+
+        router.navigateTo('/');
+
+        expect(middlewareCalled).to.be(true);
+        expect(rightHandlerCalled).to.be(false);
+        expect(errorEventHandlerCalled).to.be(true);
       });
 
       it('should navigate to the specified route and parse URL parameters', function () {
@@ -179,14 +357,24 @@ describe('signalman', function () {
       it('should navigate to the specified route and parse URL and query parameters', function () {
         var rightHandlerCalled = false,
             wrongHandlerCalled = false,
+            navEventTriggered = false,
             handler = function (cxt) {
               expect(cxt.params).to.be.eql({bookId: 'abc123', authorId: '235xyz'});
               expect(cxt.query).to.be.eql({confirm: '1', view: 'detail'});
               rightHandlerCalled = true;
+            },
+            navEventHandler = navEventHandler = function (evt) {
+              expect(evt.path).to.be('/books/abc123/authors/235xyz?confirm=1&view=detail');
+              expect(evt.method).to.be('GET');
+              expect(evt.cause).to.be('navigation');
+              expect(evt.router).to.be(router);
+              navEventTriggered = true;
             };
 
         router.get('/', function () { wrongHandlerCalled = true; });
         router.get('/books/{bookId}/authors/{authorId}', handler);
+
+        router.bind('navigating', navEventHandler);
 
         router.start();
 
@@ -194,6 +382,7 @@ describe('signalman', function () {
 
         expect(rightHandlerCalled).to.be(true);
         expect(wrongHandlerCalled).to.be(false);
+        expect(navEventTriggered).to.be(true);
       });
 
       it.skip('should intercept clicks on links and navigate through router', function () {
@@ -226,12 +415,13 @@ describe('signalman', function () {
           router.get('/', homePageHandler);
           router.get('/greet/{name}', helloPageHandler);
 
+
+
           router.start();
 
           router.navigateTo('/');
 
           expect(homePageHandlerCalled).to.be(true);
-
 
           evt = document.createEvent('MouseEvents');
           evt.initEvent('click', true, true, window, 0,
