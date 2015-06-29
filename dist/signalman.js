@@ -264,7 +264,7 @@ var signalman =
 	 * @param {Function} next - the next function in the server middleware chain
 	 */
 	Router.prototype._serverDispatcher = function (req, res, next) {
-	  var parsedUrl = purl(req.url),
+	  var parsedUrl = (typeof req.url === 'string') ? purl(req.url) : req.url,
 	      path = parsedUrl.pathname,
 	      cause = 'httpRequest',
 	      route, cxt;
@@ -484,7 +484,6 @@ var signalman =
 	module.exports = function signalman() {
 	  return new Router();
 	};
-
 
 
 /***/ },
