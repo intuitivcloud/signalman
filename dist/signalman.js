@@ -184,7 +184,7 @@ var signalman =
 	 */
 	Router.prototype._findRoute = function findRoute(method, path) {
 	  return u.find(this._routes, function (r) {
-	    return r.matcher(path) && r.method === method;
+	    return r.matcher(path) && r.method === method.toUpperCase();
 	  });
 	};
 
@@ -266,15 +266,16 @@ var signalman =
 	Router.prototype._serverDispatcher = function (req, res, next) {
 	  var parsedUrl = (typeof req.url === 'string') ? purl(req.url) : req.url,
 	      path = parsedUrl.pathname,
+	      method = req.method.toUpperCase(),
 	      cause = 'httpRequest',
 	      route, cxt;
 
 	  // find the route
-	  route = this._findRoute(req.method, path);
+	  route = this._findRoute(method, path);
 
 	  // did not find a matching route
 	  if (!route) {
-	    this.trigger('notFound', { path: req.url, method: req.method, router: this });
+	    this.trigger('notFound', { path: req.url, method: method, router: this });
 	    return next();
 	  }
 
@@ -284,7 +285,7 @@ var signalman =
 
 	  // build new context
 	  cxt = this._createContext(path, route,
-	    this._stubRoute.bind(this, req.url, req.method, next), {
+	    this._stubRoute.bind(this, req.url, method, next), {
 	    fullPath: req.url,
 	    cause: cause,
 	    request: req,
@@ -294,7 +295,7 @@ var signalman =
 	  // trigger a navigating event
 	  this.trigger('navigating', {
 	    path: path,
-	    method: req.method,
+	    method: method,
 	    cause: cause,
 	    router: this
 	  });
