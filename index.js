@@ -341,6 +341,9 @@ Router.prototype._linkJacker = function (e) {
   // ignore links that offer downloading content
   if (tgt.attributes.download) return;
 
+  // ignore links with a full mode
+  if (tgt.attributes['data-mode'] === 'full') return;
+
   // extract the path of the link and the current document
   href = purl(tgt.href);
   docUrl = purl(window.location.href);
