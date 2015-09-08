@@ -342,7 +342,7 @@ Router.prototype._linkJacker = function (e) {
   if (tgt.attributes.download) return;
 
   // ignore links with a full mode
-  if (tgt.attributes['data-mode'] === 'full') return;
+  if (('data-mode' in tgt.attributes) && tgt.attributes['data-mode'].value === 'full') return;
 
   // extract the path of the link and the current document
   href = purl(tgt.href);
