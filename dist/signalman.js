@@ -393,6 +393,9 @@ var signalman =
 	  // ignore links that offer downloading content
 	  if (tgt.attributes.download) return;
 
+	  // ignore links with a full mode
+	  if (('data-mode' in tgt.attributes) && tgt.attributes['data-mode'].value === 'full') return;
+
 	  // extract the path of the link and the current document
 	  href = purl(tgt.href);
 	  docUrl = purl(window.location.href);
@@ -682,7 +685,7 @@ var signalman =
 
 	'use strict';
 
-	var pathRex = /(([\w\.\-\+]+:)\/{2}(([\w\d\.]+):([\w\d\.]+))?@?(([a-zA-Z0-9\.\-_]+)(?::(\d{1,5}))?))?(\/(?:[a-zA-Z0-9\.\-\/\+\%]+)?)(?:\?([a-zA-Z0-9=%\-_\.\*&;]+))?(?:#([a-zA-Z0-9\-=,&%;\/\\"'\?]+)?)?/;
+	var pathRex = /(([\w\.\-\+]+:)\/{2}(([\w\d\.]+):([\w\d\.]+))?@?(([a-zA-Z0-9\.\-_]+)(?::(\d{1,5}))?))?(\/(?:[a-zA-Z0-9\.\-\/\+\%\_]+)?)(?:\?([a-zA-Z0-9=%\-_\.\*&;]+))?(?:#([a-zA-Z0-9\-=,&%;\/\\"'\?]+)?)?/;
 
 	/**
 	 * Parses the specified URL and returns an object containing the components
