@@ -67,7 +67,7 @@ describe('signalman', function () {
         var handler = function (cxt) {},
             route;
 
-        router.get('/', handler);
+        router.get('test', '/', handler);
         route = router._routes[0];
 
         expect(route).to.be.ok();
@@ -82,7 +82,7 @@ describe('signalman', function () {
             handler = function (cxt) {},
             route;
 
-        router.get('/', middleware, handler);
+        router.get('test', '/', middleware, handler);
         route = router._routes[0];
 
         expect(route).to.be.ok();
@@ -94,26 +94,34 @@ describe('signalman', function () {
 
       it('should not add a route to handle a non-GET request', function () {
 
-        router.post('/hello/{name}', function () {});
-        router.del('/hello/{name}', function () {});
-        router.put('/hello/{name}', function () {});
-        router.patch('/hello/{name}', function () {});
-        router.head('/hello/{name}', function () {});
-        router.options('/hello/{name}', function () {});
-        router.trace('/hello/{name}', function () {});
+        router.post('test1', '/hello/{name}', function () {});
+        router.del('test2', '/hello/{name}', function () {});
+        router.put('test3', '/hello/{name}', function () {});
+        router.patch('test4', '/hello/{name}', function () {});
+        router.head('test5', '/hello/{name}', function () {});
+        router.options('test6', '/hello/{name}', function () {});
+        router.trace('test7', '/hello/{name}', function () {});
 
         expect(router._routes).to.be.empty();
       });
 
-      it('should not navigate to the initial route on start when autoStart is not set', function () {
+      it('should not add a route if another route with the same name is added', function () {
+
+        router.get('test1', '/hello/{name}', function () {});
+        expect(function () {
+          router.get('test1', '/hello/{name}', function () {});
+        }).to.throwError(/Route with the name 'test1' is already added/);
+      });
+
+      it('should not navigate to the initial route by path on start when autoStart is not set', function () {
         var rightHandlerCalled = false,
             wrongHandlerCalled = false,
-            handler = function (cxt) {
+            handler = function () {
               rightHandlerCalled = true;
             };
 
-        router.get('/', function () { wrongHandlerCalled = true; });
-        router.get('/hello/{name}', handler);
+        router.get('test', '/', function () { wrongHandlerCalled = true; });
+        router.get('test2', '/hello/{name}', handler);
 
         router.start();
 
@@ -129,7 +137,7 @@ describe('signalman', function () {
               expect(cxt.cause).to.be('startup');
               rightHandlerCalled = true;
             },
-            navEventHandler = navEventHandler = function (evt) {
+            navEventHandler = function (evt) {
               expect(evt.path).to.be('http://localhost:3000/hello/Goober?confirm=1');
               expect(evt.method).to.be('GET');
               expect(evt.cause).to.be('startup');
@@ -137,8 +145,8 @@ describe('signalman', function () {
               navEventTriggered = true;
             };
 
-        router.get('/', function () { wrongHandlerCalled = true; });
-        router.get('/hello/{name}', handler);
+        router.get('test1', '/', function () { wrongHandlerCalled = true; });
+        router.get('test2', '/hello/{name}', handler);
 
         router.bind('navigating', navEventHandler);
 
@@ -157,7 +165,7 @@ describe('signalman', function () {
               expect(cxt.cause).to.be('navigation');
               rightHandlerCalled = true;
             },
-            navEventHandler = navEventHandler = function (evt) {
+            navEventHandler = function (evt) {
               expect(evt.path).to.be('/');
               expect(evt.method).to.be('GET');
               expect(evt.cause).to.be('navigation');
@@ -165,8 +173,8 @@ describe('signalman', function () {
               navEventTriggered = true;
             };
 
-        router.get('/hello/{name}', function () { wrongHandlerCalled = true; });
-        router.get('/', handler);
+        router.get('test1', '/hello/{name}', function () { wrongHandlerCalled = true; });
+        router.get('test2', '/', handler);
 
         router.bind('navigating', navEventHandler);
 
@@ -195,7 +203,7 @@ describe('signalman', function () {
               errorEventHandlerCalled = true;
             };
 
-        router.get('/', handler);
+        router.get('test', '/', handler);
 
         router.bind('error', errorEventHandler);
 
@@ -242,7 +250,7 @@ describe('signalman', function () {
               errorEventHandlerCalled = true;
             };
 
-        router.get('/', handler);
+        router.get('test', '/', handler);
 
         router.bind('error', errorEventHandler);
 
@@ -255,7 +263,7 @@ describe('signalman', function () {
         expect(errorEventHandlerCalled).to.be(true);
       });
 
-      it('should navigate to the specified route calling all middleware and handlers', function () {
+      it('should navigate to the specified route by path calling all middleware and handlers', function () {
         var rightHandlerCalled = false,
             wrongHandlerCalled = false,
             middlewareCalled = false,
@@ -268,12 +276,37 @@ describe('signalman', function () {
               cxt.next();
             };
 
-        router.get('/hello/{name}', function () { wrongHandlerCalled = true; });
-        router.get('/', middleware, handler);
+        router.get('test', '/hello/{name}', function () { wrongHandlerCalled = true; });
+        router.get('test1', '/', middleware, handler);
 
         router.start();
 
         router.navigateTo('/');
+
+        expect(rightHandlerCalled).to.be(true);
+        expect(wrongHandlerCalled).to.be(false);
+        expect(middlewareCalled).to.be(true);
+      });
+
+      it('should navigate to the specified route by name calling all middleware and handlers', function () {
+        var rightHandlerCalled = false,
+            wrongHandlerCalled = false,
+            middlewareCalled = false,
+            handler = function (cxt) {
+              expect(cxt.cause).to.be('navigation');
+              rightHandlerCalled = true;
+            },
+            middleware = function (cxt) {
+              middlewareCalled = true;
+              cxt.next();
+            };
+
+        router.get('test', '/hello/{name}', function () { wrongHandlerCalled = true; });
+        router.get('test1', '/', middleware, handler);
+
+        router.start();
+
+        router.navigateTo('test1');
 
         expect(rightHandlerCalled).to.be(true);
         expect(wrongHandlerCalled).to.be(false);
@@ -292,7 +325,7 @@ describe('signalman', function () {
               cxt.next({ message: 'Error!' });
             };
 
-        router.get('/', middleware, handler);
+        router.get('test', '/', middleware, handler);
 
         router.start();
 
@@ -322,7 +355,7 @@ describe('signalman', function () {
               errorEventHandlerCalled = true;
             };
 
-        router.get('/', middleware, handler);
+        router.get('test', '/', middleware, handler);
 
         router.bind('error', errorEventHandler);
 
@@ -335,7 +368,7 @@ describe('signalman', function () {
         expect(errorEventHandlerCalled).to.be(true);
       });
 
-      it('should navigate to the specified route and parse URL parameters', function () {
+      it('should navigate to the specified route by path and parse URL parameters', function () {
         var rightHandlerCalled = false,
             wrongHandlerCalled = false,
             handler = function (cxt) {
@@ -343,12 +376,31 @@ describe('signalman', function () {
               rightHandlerCalled = true;
             };
 
-        router.get('/', function () { wrongHandlerCalled = true; });
-        router.get('/books/{bookId}/authors/{authorId}', handler);
+        router.get('test', '/', function () { wrongHandlerCalled = true; });
+        router.get('test1', '/books/{bookId}/authors/{authorId}', handler);
 
         router.start();
 
         router.navigateTo('/books/abc123/authors/235xyz');
+
+        expect(rightHandlerCalled).to.be(true);
+        expect(wrongHandlerCalled).to.be(false);
+      });
+
+      it('should navigate to the specified route by name with specified parameters', function () {
+        var rightHandlerCalled = false,
+            wrongHandlerCalled = false,
+            handler = function (cxt) {
+              expect(cxt.params).to.be.eql({bookId: 'abc123', authorId: '235xyz'});
+              rightHandlerCalled = true;
+            };
+
+        router.get('test', '/', function () { wrongHandlerCalled = true; });
+        router.get('test1', '/books/{bookId}/authors/{authorId}', handler);
+
+        router.start();
+
+        router.navigateTo('test1', { bookId: 'abc123', authorId: '235xyz' });
 
         expect(rightHandlerCalled).to.be(true);
         expect(wrongHandlerCalled).to.be(false);
@@ -363,7 +415,7 @@ describe('signalman', function () {
               expect(cxt.query).to.be.eql({confirm: '1', view: 'detail'});
               rightHandlerCalled = true;
             },
-            navEventHandler = navEventHandler = function (evt) {
+            navEventHandler = function (evt) {
               expect(evt.path).to.be('/books/abc123/authors/235xyz?confirm=1&view=detail');
               expect(evt.method).to.be('GET');
               expect(evt.cause).to.be('navigation');
@@ -371,8 +423,8 @@ describe('signalman', function () {
               navEventTriggered = true;
             };
 
-        router.get('/', function () { wrongHandlerCalled = true; });
-        router.get('/books/{bookId}/authors/{authorId}', handler);
+        router.get('test', '/', function () { wrongHandlerCalled = true; });
+        router.get('test1', '/books/{bookId}/authors/{authorId}', handler);
 
         router.bind('navigating', navEventHandler);
 
@@ -412,10 +464,8 @@ describe('signalman', function () {
 
           console.log(router._routes);
 
-          router.get('/', homePageHandler);
-          router.get('/greet/{name}', helloPageHandler);
-
-
+          router.get('test', '/', homePageHandler);
+          router.get('test1', '/greet/{name}', helloPageHandler);
 
           router.start();
 
