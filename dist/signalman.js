@@ -68,6 +68,10 @@ var signalman =
 	var httpSafeMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS', 'TRACE'],
 	    isBrowser = !!(typeof window !== 'undefined' && window.document && window.document.createElement);
 
+	function isPath(str) {
+	  return str.search('/') >= 0;
+	}
+
 	/**
 	 * A router that routes requests
 	 *
@@ -147,21 +151,26 @@ var signalman =
 	   *
 	   * @public
 	   *
+	   * @param  {string}     name     - the the name of the route
 	   * @param  {string}     path     - the path to handle
 	   * @param  {function[]} handlers - one or more handlers
 	   */
-	  proto[methodName] = function (path) {
+	  proto[methodName] = function (name, path) {
 	    var handlers, m;
 
 	    // noop if on client and method is not GET
 	    if (isBrowser && method !== 'GET') return;
 
-	    handlers = u.arrgs(arguments).slice(1);
+	    if (this._findRouteByName(name))
+	      throw new Error('Route with the name \'' + name + '\' is already added');
+
+	    handlers = u.arrgs(arguments).slice(2);
 	    m = murl(path);
 
 	    if (!(m in this._routes)) this._routes[m] = {};
 
 	    this._routes.push({
+	      name: name,
 	      method: method,
 	      path: path,
 	      handlers: handlers,
@@ -177,14 +186,33 @@ var signalman =
 	 *
 	 * @private
 	 *
-	 * @param  {string} method - the HTTP method to match route against
 	 * @param  {string} path   - the path to match the route against
+	 * @param  {string} [method=GET] - the HTTP method to match route against
 	 *
 	 * @return {Route|undefined} the route object or undefined
 	 */
-	Router.prototype._findRoute = function findRoute(method, path) {
+	Router.prototype._findRouteByPath = function findRoute(path, method) {
+	  method = method || 'GET';
 	  return u.find(this._routes, function (r) {
 	    return r.matcher(path) && r.method === method.toUpperCase();
+	  });
+	};
+	/**
+	 * Finds and returns the first route whose name & method match the specified
+	 * name and method
+	 *
+	 * @private
+	 *
+	 * @param  {string} name   - the name of the route
+	 * @param  {string} [method=GET] - the HTTP method to match route against
+	 *
+	 * @return {Route|undefined} the route object or undefined
+	 */
+	Router.prototype._findRouteByName = function findRoute(name, method) {
+	  method = method || 'GET';
+
+	  return u.find(this._routes, function (r) {
+	    return r.name === name && r.method === method.toUpperCase();
 	  });
 	};
 
@@ -219,11 +247,20 @@ var signalman =
 	    var handler;
 
 	    // stop if a handler throws an error
-	    if (err) return next(err);
+	    if (err)
+	      return next(err);
 
 	    handler = handlerQ.shift();
 
-	    if (!handler) return next();
+	    if (!handler) {
+	      this.router.trigger('navigationComplete', {
+	        path: path,
+	        method: route.method,
+	        cause: state.cause,
+	        router: this.router
+	      });
+	      return next();
+	    }
 
 	    try {
 	      return handler(cxt);
@@ -271,7 +308,7 @@ var signalman =
 	      route, cxt;
 
 	  // find the route
-	  route = this._findRoute(method, path);
+	  route = this._findRouteByPath(path, method);
 
 	  // did not find a matching route
 	  if (!route) {
@@ -309,25 +346,26 @@ var signalman =
 	 *
 	 * @private
 	 *
-	 * @param {string} path    - the path to dispatch to
+	 * @param {string} pathOrName    - the path to dispatch to
 	 * @param {Object} [state] - an optional state to be associated with the navigation
 	 */
-	Router.prototype._clientDispatcher = function (path, state) {
+	Router.prototype._clientDispatcher = function (pathOrName, state) {
 	  var currPath = document.location.pathname,
 	      cause = (state.cause || 'navigation'),
-	      url = purl(path),
-	      route = this._findRoute('GET', url.pathname),
+	      url = purl(pathOrName),
+	      byPath = isPath(pathOrName),
+	      route = byPath ? this._findRouteByPath(url.pathname, 'GET') : this._findRouteByName(pathOrName, 'GET'),
 	      cxt, newState;
 
 	  if (!route) {
-	    this.trigger('notFound', { path: path, method: 'GET', router: this });
+	    this.trigger('notFound', { path: pathOrName, method: 'GET', router: this });
 	    return;
 	  }
 
 	  // build new context
 	  cxt = this._createContext(url.pathname, route,
-	    this._stubRoute.bind(this, path, 'GET', u.noop), {
-	    fullPath: path,
+	    this._stubRoute.bind(this, pathOrName, 'GET', u.noop), {
+	    fullPath: pathOrName,
 	    cause: cause,
 	    params: (state.params || route.matcher(url.pathname)),
 	    query: (state.query || paqs(url.search))
@@ -337,16 +375,16 @@ var signalman =
 	  newState = u.pick(cxt, ['fullPath', 'path', 'params', 'query', 'cause']);
 
 	  if (currPath === url.pathname)
-	    window.history.replaceState(newState, null, path);
+	    window.history.replaceState(newState, null, pathOrName);
 	  else
-	    window.history.pushState(newState, null, path);
+	    window.history.pushState(newState, null, pathOrName);
 
 	  // invoke the first handler/middleware
 	  cxt.next();
 
 	  // trigger a navigating event
 	  this.trigger('navigating', {
-	    path: path,
+	    path: pathOrName,
 	    method: 'GET',
 	    cause: cause,
 	    router: this
@@ -393,8 +431,8 @@ var signalman =
 	  // ignore links that offer downloading content
 	  if (tgt.attributes.download) return;
 
-	  // ignore links with a full mode
-	  if (('data-mode' in tgt.attributes) && tgt.attributes['data-mode'].value === 'full') return;
+	  // ignore links with a hard mode
+	  if (('data-hard' in tgt.attributes) && tgt.attributes['data-hard'].value === 'true') return;
 
 	  // extract the path of the link and the current document
 	  href = purl(tgt.href);
@@ -480,9 +518,11 @@ var signalman =
 	   * Triggers navigation to the specified path
 	   *
 	   * @public
+	   *
+	   * @param {String} path the path to navigate to
 	   */
-	  Router.prototype.navigateTo = function (path) {
-	    this._clientDispatcher(path, {cause: 'navigation'});
+	  Router.prototype.navigateTo = function (path, params) {
+	    this._clientDispatcher(path, {cause: 'navigation', params: params });
 	  };
 
 	module.exports = function signalman() {
