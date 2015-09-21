@@ -1,6 +1,6 @@
 {
   "name": "signalman",
-  "version": "1.2.1",
+  "version": "2.0.0",
   "description": "An isomorphic router to build web applications",
   "main": "index.js",
   "scripts": {
