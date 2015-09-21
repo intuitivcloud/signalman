@@ -43,7 +43,7 @@ describe('signalman', function () {
         var handler = function (cxt) {},
             route;
 
-        router.get('/', handler);
+        router.get('test', '/', handler);
         route = router._routes[0];
 
         expect(route).to.be.ok();
@@ -58,7 +58,7 @@ describe('signalman', function () {
             handler = function (cxt) {},
             route;
 
-        router.get('/', middleware, handler);
+        router.get('test', '/', middleware, handler);
         route = router._routes[0];
 
         expect(route).to.be.ok();
@@ -72,7 +72,7 @@ describe('signalman', function () {
         var handler = function (cxt) {},
             route;
 
-        router.post('/hello/:name', handler);
+        router.post('test', '/hello/:name', handler);
         route = router._routes[0];
 
         expect(route).to.be.ok();
@@ -86,7 +86,7 @@ describe('signalman', function () {
         var handler = function (cxt) {},
             route;
 
-        router.put('/hello/:name', handler);
+        router.put('test', '/hello/:name', handler);
         route = router._routes[0];
 
         expect(route).to.be.ok();
@@ -100,7 +100,7 @@ describe('signalman', function () {
         var handler = function (cxt) {},
             route;
 
-        router.patch('/hello/:name', handler);
+        router.patch('test', '/hello/:name', handler);
         route = router._routes[0];
 
         expect(route).to.be.ok();
@@ -114,7 +114,7 @@ describe('signalman', function () {
         var handler = function (cxt) {},
             route;
 
-        router.del('/hello/:name', handler);
+        router.del('test', '/hello/:name', handler);
         route = router._routes[0];
 
         expect(route).to.be.ok();
@@ -128,7 +128,7 @@ describe('signalman', function () {
         var handler = function (cxt) {},
             route;
 
-        router.head('/hello/:name', handler);
+        router.head('test', '/hello/:name', handler);
         route = router._routes[0];
 
         expect(route).to.be.ok();
@@ -142,7 +142,7 @@ describe('signalman', function () {
         var handler = function (cxt) {},
             route;
 
-        router.options('/hello/:name', handler);
+        router.options('test', '/hello/:name', handler);
         route = router._routes[0];
 
         expect(route).to.be.ok();
@@ -156,7 +156,7 @@ describe('signalman', function () {
         var handler = function (cxt) {},
             route;
 
-        router.trace('/hello/:name', handler);
+        router.trace('test', '/hello/:name', handler);
         route = router._routes[0];
 
         expect(route).to.be.ok();
@@ -164,6 +164,14 @@ describe('signalman', function () {
         expect(route.path).to.be('/hello/:name');
         expect(route.handlers).to.be.eql([handler]);
         expect(route.matcher).to.be.a('function');
+      });
+
+      it('should not add a route if another route with the same name is added', function () {
+        router.get('test1', '/hello/{name}', function () {});
+
+        expect(function () {
+          router.get('test1', '/hello/{name}', function () {});
+        }).to.throwError(/Route with the name 'test1' is already added/);
       });
 
       it('should provide a middleware when routing is started', function () {
@@ -190,7 +198,7 @@ describe('signalman', function () {
             handlerCalled = true;
           };
 
-          router.get('/', handler);
+          router.get('test', '/', handler);
 
           router.start()(req, res, next);
 
@@ -257,7 +265,7 @@ describe('signalman', function () {
             navEventTriggered = true;
           };
 
-          router.get('/', middleware, handler);
+          router.get('test', '/', middleware, handler);
 
           router.bind('navigating', navEventHandler);
 
@@ -279,7 +287,7 @@ describe('signalman', function () {
           next = function () { nextCalled = true; };
           handler = function (cxt) {};
 
-          router.get('/hello', middleware, handler);
+          router.get('test', '/hello', middleware, handler);
 
           router.start()(req, res, next);
 
@@ -303,7 +311,7 @@ describe('signalman', function () {
             handlerCalled = true;
           };
 
-          router.get('/{name}', handler);
+          router.get('test', '/{name}', handler);
 
           router.start()(req, res, next);
 
@@ -328,7 +336,7 @@ describe('signalman', function () {
             handlerCalled = true;
           };
 
-          router.get('/', handler);
+          router.get('test', '/', handler);
 
           router.start()(req, res, next);
 
@@ -353,7 +361,7 @@ describe('signalman', function () {
             cxt.next({message: 'Error!'});
           };
 
-          router.get('/', handler);
+          router.get('test', '/', handler);
 
           router.start()(req, res, next);
 
@@ -384,7 +392,7 @@ describe('signalman', function () {
           handlerCalled = true;
         };
 
-        router.get('/', ware, handler);
+        router.get('test', '/', ware, handler);
 
         router.start()(req, res, next);
 
@@ -424,7 +432,7 @@ describe('signalman', function () {
           errorEventTriggered = true;
         };
 
-        router.get('/', ware, handler);
+        router.get('test', '/', ware, handler);
         router.bind('error', errorEventListener);
 
         router.start()(req, res, next);
