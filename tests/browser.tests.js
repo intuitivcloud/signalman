@@ -400,7 +400,27 @@ describe('signalman', function () {
 
         router.start();
 
-        router.navigateTo('test1', { bookId: 'abc123', authorId: '235xyz' });
+        router.navigateTo('test1', null, { bookId: 'abc123', authorId: '235xyz' });
+
+        expect(rightHandlerCalled).to.be(true);
+        expect(wrongHandlerCalled).to.be(false);
+      });
+
+      it('should navigate to the specified route by name with specified query parameters', function () {
+        var rightHandlerCalled = false,
+            wrongHandlerCalled = false,
+            handler = function (cxt) {
+              expect(cxt.query).to.be.eql({st: 'foo', g: 1});
+              expect(cxt.params).to.be.eql({bookId: 'abc123', authorId: '235xyz'});
+              rightHandlerCalled = true;
+            };
+
+        router.get('test', '/', function () { wrongHandlerCalled = true; });
+        router.get('test1', '/books/{bookId}/authors/{authorId}', handler);
+
+        router.start();
+
+        router.navigateTo('test1', { st: 'foo', g: 1 }, { bookId: 'abc123', authorId: '235xyz' });
 
         expect(rightHandlerCalled).to.be(true);
         expect(wrongHandlerCalled).to.be(false);

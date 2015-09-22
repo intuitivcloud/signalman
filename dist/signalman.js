@@ -515,14 +515,16 @@ var signalman =
 	// add the navigateTo method only if we are in a browser
 	if (isBrowser)
 	  /**
-	   * Triggers navigation to the specified path
+	   * Triggers navigation to the route with the specified path or name
 	   *
 	   * @public
 	   *
-	   * @param {String} path the path to navigate to
+	   * @param {String} pathOrName the pathOrName to navigate to
+	   * @param {object} query      one or more query parameters
+	   * @param {object} params     one or more URL parameters
 	   */
-	  Router.prototype.navigateTo = function (path, params) {
-	    this._clientDispatcher(path, {cause: 'navigation', params: params });
+	  Router.prototype.navigateTo = function (pathOrName, query, params) {
+	    this._clientDispatcher(pathOrName, {cause: 'navigation', params: params, query: query });
 	  };
 
 	module.exports = function signalman() {
