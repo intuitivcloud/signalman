@@ -6,6 +6,8 @@
 
 'use strict';
 
+var url = require('url');
+
 /**
  * Finds the first item in the array for which the specified
  * predicate function returns <code>true</code>
@@ -88,11 +90,24 @@ function pick(src, propNames) {
   }, {});
 }
 
+function createPath(options) {
+  var pathname = options.pathname;
+
+  if (options.params) {
+    pathname = Object.keys(options.params).reduce(function (pathname, key) {
+      return pathname.replace('{' + key + '}', encodeURIComponent(options.params[key]));
+    }, pathname);
+  }
+
+  return url.format({pathname: pathname, query: options.query, hash: options.hash});
+}
+
 module.exports = {
   find: find,
   arrgs: arrgs,
   merge: merge,
   noop: noop,
-  pick: pick
+  pick: pick,
+  createPath: createPath
 };
 

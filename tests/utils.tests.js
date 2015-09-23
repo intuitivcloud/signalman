@@ -99,4 +99,46 @@ describe('utils', function () {
 
   });
 
+  describe('#createPath', function () {
+
+    it('should return valid path from arguments', function () {
+      expect(u.createPath({ pathname: '/foo'})).to.be.eql('/foo');
+    });
+
+    it('should return valid path with a parameter replaced from arguments', function () {
+      expect(u.createPath({ pathname: '/foo/{name}', params: {name: 'goober'}})).to.be.eql('/foo/goober');
+    });
+
+    it('should return valid path with parameters replaced from arguments', function () {
+      expect(u.createPath({ pathname: '/foo/{name}/{fighter}', params: {name: 'goober', fighter: 'moo'}}))
+          .to.be.eql('/foo/goober/moo');
+    });
+
+    it('should return valid path with parameters with special characters replaced from arguments', function () {
+      expect(u.createPath({ pathname: '/foo/{name}/{fighter}', params: {name: 'goo ber', fighter: 'moo'}}))
+          .to.be.eql('/foo/goo%20ber/moo');
+    });
+
+    it('should return valid path with parameters replaced and query string from arguments', function () {
+      expect(u.createPath({ pathname: '/foo/{name}/{fighter}',
+        params: {name: 'goober', fighter: 'moo'}, query: { a: '1', b: 20, 'c_d': true}}))
+          .to.be.eql('/foo/goober/moo?a=1&b=20&c_d=true');
+    });
+
+    it('should return valid path with parameters replaced and query string with special characters from arguments',
+        function () {
+          expect(u.createPath({ pathname: '/foo/{name}/{fighter}',
+            params: {name: 'goober', fighter: 'moo'}, query: { a: '1', b: 20, 'name': 'John Doe'}}))
+              .to.be.eql('/foo/goober/moo?a=1&b=20&name=John%20Doe');
+        }
+    );
+
+    it('should return valid path with parameters replaced and query string and hash from arguments', function () {
+      expect(u.createPath({ pathname: '/foo/{name}/{fighter}',
+        params: {name: 'goober', fighter: 'moo'}, query: { a: '1', b: 20, 'c_d': true}, hash: 'mee=boo'}))
+          .to.be.eql('/foo/goober/moo?a=1&b=20&c_d=true#mee=boo');
+    });
+
+  });
+
 });
