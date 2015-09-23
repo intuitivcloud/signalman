@@ -303,17 +303,23 @@ Router.prototype._clientDispatcher = function (pathOrName, state) {
       url = purl(pathOrName),
       byPath = isPath(pathOrName),
       route = byPath ? this._findRouteByPath(url.pathname, 'GET') : this._findRouteByName(pathOrName, 'GET'),
+      newPath = byPath ? pathOrName : u.createPath({
+        pathname: route.path,
+        params: state.params,
+        query: state.query,
+        hash: state.hash
+      }),
       cxt, newState;
 
   if (!route) {
-    this.trigger('notFound', { path: pathOrName, method: 'GET', router: this });
+    this.trigger('notFound', { path: newPath, method: 'GET', router: this });
     return;
   }
 
   // build new context
   cxt = this._createContext(url.pathname, route,
-    this._stubRoute.bind(this, pathOrName, 'GET', u.noop), {
-    fullPath: pathOrName,
+    this._stubRoute.bind(this, newPath, 'GET', u.noop), {
+    fullPath: newPath,
     cause: cause,
     params: (state.params || route.matcher(url.pathname)),
     query: (state.query || paqs(url.search))
@@ -323,16 +329,16 @@ Router.prototype._clientDispatcher = function (pathOrName, state) {
   newState = u.pick(cxt, ['fullPath', 'path', 'params', 'query', 'cause']);
 
   if (currPath === url.pathname)
-    window.history.replaceState(newState, null, pathOrName);
+    window.history.replaceState(newState, null, newPath);
   else
-    window.history.pushState(newState, null, pathOrName);
+    window.history.pushState(newState, null, newPath);
 
   // invoke the first handler/middleware
   cxt.next();
 
   // trigger a navigating event
   this.trigger('navigating', {
-    path: pathOrName,
+    path: newPath,
     method: 'GET',
     cause: cause,
     router: this
