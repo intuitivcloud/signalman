@@ -1,6 +1,6 @@
 {
   "name": "signalman",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "An isomorphic router to build web applications",
   "main": "index.js",
   "scripts": {
@@ -40,6 +40,7 @@
     "microevent": "^1.0.0",
     "murl": "^0.4.1",
     "paqs": "^1.0.1",
-    "purl": "^1.0.3"
+    "purl": "^1.0.3",
+    "url": "^0.11.0"
   }
 }
